@@ -11,6 +11,7 @@ import it.skrape.selects.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.lang.Exception
 
 data class MyDataClass(
@@ -20,12 +21,9 @@ data class MyDataClass(
     var allParagraphs: List<String> = emptyList(),
     var allLinks: List<String> = emptyList()
 )
-
-class Weapon (val name: String, val damagePerAttack: Number, val damagePerSecond: Number, val attacksPerSecond: Number,
-                val bonus: Number, val criticalChanceMultiplier: Number, val criticalDamage: Number, val actionPointCost: Number,
-                    val damagePerActionPoint: Number, val weaponSpread: Number, val magazineCapacity: Number,
-                        val durability: Number, val weight: Number, val valueInCaps: Number,
-                          val valueToWeightRation: Number, val skillRequired: Number, val strengthRequired: Number){}
+@Serializable
+class Weapon (val name: String, val damage: Float,
+              val damagePerSecond: Float, val weight: Float, val cost: Float, val skillRequired: Float){}
 
 @Serializable
 class EazyWeapon(val name: String, val stats: ArrayList<String>){}
@@ -83,9 +81,7 @@ class HtmlExtractionService {
             }
             return extracted.allParagraphs
         }
-        catch(e: Exception) {
-
-        }
+        catch(e: Exception) {}
         return arrayListOf()
     }
 
@@ -95,14 +91,20 @@ fun main(){
     val hello = HtmlExtractionService()
     val helper = hello.extract()
 
+    var helper2 = arrayListOf<String>()
     for (i in helper) {
-        println(i)
+
+        if(!helper2.contains(i)) {
+            helper2.add(i)
+            println(i);
+        }
     }
+    println()
 
     var everything : ArrayList<String> = ArrayList()
     var counter = 0
     var prev = ""
-    for (i in helper) {
+    for (i in helper2) {
         if(counter > 2) {
             if(i != prev){
                 var tmp : String = hello.extract2(i).toString()
@@ -118,50 +120,40 @@ fun main(){
         prev = i
     }
 
-    var eazyWeaponContainer = arrayListOf<EazyWeapon>()
-    for(i in everything){
-        i.replace("[", "")
-        i.replace("]","")
-        val parts = i.split(",")
+    var weaponContainer = arrayListOf<Weapon>()
+    var j = 0
+    for(i in everything) {
+        everything[j] = everything[j].replace("[", "")
+        everything[j] = everything[j].replace("]", "")
+        val parts = everything[j].split(",")
         var name: String = ""
         var stats = arrayListOf<String>()
         counter = 0
-        for(i in parts) {
-            counter++
-            if(counter == 1){
-                name = i
-            }
-            else {
-                stats.add(i)
-            }
-            print("$i + ")
-
+        j++
+        try {
+            val newWeapon: Weapon = Weapon(
+                parts[0], parts[1].toFloat(), parts[2].toFloat(),
+                parts[parts.size - 5].toFloat(), parts[parts.size - 4].toFloat(), parts[parts.size - 1].toFloat()
+            )
+            weaponContainer.add(newWeapon)
+        } catch (e: Exception) {
         }
-        eazyWeaponContainer.add(EazyWeapon(name, stats))
-        print("\n")
+
     }
 
     println("\n\n")
 
-    for(i in eazyWeaponContainer){
-        println("${i.name} ${i.stats}")
+    for(i in weaponContainer){
+        println("${i.name}, ${i.damage}, ${i.damagePerSecond}, ${i.weight}, ${i.cost}, ${i.skillRequired}")
     }
 
-    println("\n\n\n${Json.encodeToString(eazyWeaponContainer[0])}")
-
-
+    println("\n\n\n${Json.encodeToString(weaponContainer[0])}")
+    val file = "weapons.json"
+    File(file).writeText(Json.encodeToString(weaponContainer))
 
 
 
 
 
 }
-
-//<table class="va-table full center bottom mw-collapsible mw-made-collapsible" style="width:50%; margin:auto">
-
-//withClass = "foo"
-//findFirst {
-//    text toBe "some p-element"
-//    className  toBe "foo"
-//}
 
