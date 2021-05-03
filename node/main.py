@@ -13,7 +13,7 @@ connected = False
 diff = 5
 
 root = Tk()
-root.title("Vaja5")
+root.title("Projekt Naloga 1")
 
 ledger = Text(root)
 ledger.grid(row=1, column=0, columnspan=3)
@@ -187,10 +187,11 @@ def Server():
     sock.bind(("127.0.0.1", 0))
     print("Listening on port:" + str(sock.getsockname()))
     port.configure(text=sock.getsockname())
-    sock.listen()
-    client, address = sock.accept()
-    print("Client has connected")
-    threading.Thread(target=HandleClient, args=(client, address, )).start()
+    while True:
+        sock.listen()
+        client, address = sock.accept()
+        print("Client has connected")
+        threading.Thread(target=HandleClient, args=(client, address, )).start()
 
 
 #oprtje porta za pošiljanje
@@ -239,6 +240,7 @@ MineButton = Button(root, text="Mine", command=StartMining)
 MineButton.grid(row=0, column=0)
 
 root.mainloop()
+
 
 
 
