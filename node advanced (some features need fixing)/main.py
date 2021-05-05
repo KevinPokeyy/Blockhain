@@ -71,6 +71,40 @@ def CurrentDiff():
         diff = diff - 1
     return
 
+#preverjanje statusa denarnice
+def GetState(name):
+    state = 0
+    for b in blockchain:
+        if not b.data == "None":
+            if name in b.data:
+                tran = b.data
+                tran = tran.replace("\'", "\"")
+                print(type(tran))
+                print(tran)
+                tran = json.loads(tran)
+                tran = JsonToTran(tran)
+                if name == tran.sender:
+                    state = state - tran.amountSent
+                elif name == tran.receiver:
+                    state = state + tran.amountSent
+    print(state)
+    return state
+
+#pridobi zadnji id transakcije v blockchainu
+def GetLastId():
+    global currentTranId
+    tmp = 0
+    for b in blockchain:
+        if not b.data == "None":
+            print(b.data)
+
+#preverjanje če je transakcija že v blockchainu
+def CheckMempool():
+    for t in mempool:
+        for b in blockchain:
+            if t.hash in b.data:
+                mempool.remove(t)
+
 #pridobi zadnji id transakcije v blockchainu
 def GetLastId():
     global currentTranId
@@ -92,6 +126,10 @@ def Speak(option, what, client):
         client.recv(256)
     elif option == "API_ADDRESS_SEND":
         tmp = json.dumps(EncodeJsonTran(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "API_ADDRESS_STATE":
+        tmp = json.dumps(EncodeJsonAddr(what))
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     else:
@@ -119,6 +157,8 @@ def Recieve(client, option):
                 a = JsonToTran(msg)
             elif option == "API_ADDRESS_SEND":
                 a = JsonToTran(msg)
+            elif option == "API_ADDRESS_STATE":
+                a = JsonToAddr(msg)
             elif option == "MEMPOOL_EXPAND":
                 a = JsonToTran(msg)
             else:
@@ -271,6 +311,7 @@ def HandleClient(client, address):
 
         #širjenje mempool po omrežju
         elif msg == "MEMPOOL_EXPAND":
+            CheckMempool()
             imposterMem = Recieve(client, "MEMPOOL_EXPAND")
             print(len(imposterMem))
             print(imposterMem)
@@ -331,6 +372,11 @@ def HandleClient(client, address):
                     pass
             print(len(mempool))
 
+        elif msg == "API_ADDRESS_STATE":
+            addr = Recieve(client, "API_ADDRESS_STATE")
+            addr[0].state = GetState(addr[0].name)
+            Speak("API_ADDRESS_STATE", addr[0], client)
+
 
 
 
@@ -362,7 +408,7 @@ def Client():
     #ni. Ker bloke samo ustvarjamo z rudarjenjem (lahko maybe naredimo da oglišče začne rudarit --_('_')_--
 
     #API ZA DODAJANJE NASLOVA
-    #Speak("API_ADDRESS_NEW", Transaction("coinbase", "NewAddressName", 1000), client2)
+    #Speak("API_ADDRESS_NEW", Transaction("coinbase", "KevinDenarnica", 1000), client2)
 
     #API ZA PRIDOBITEV ZADNJEGA BLOKA IZ VERIGE
     #Speak("API_LAST", None, client2)
@@ -376,7 +422,8 @@ def Client():
     #Speak("API_ADDRESS_NEW", Transaction("senderAddr", "receiverAddr", 1000), client2)
 
     #API ZA STANJE NA NASLOVU
-    #needs an implementation
+    #Speak("API_ADDRESS_STATE", Address("KevinDenarica", 0), client2)
+    #print(Recieve(client2, "API_ADDRESS_STATE").state())
 
     while True:
         try:
@@ -386,7 +433,6 @@ def Client():
             pass
         print("loop")
         time.sleep(3)
-
 
 def StartClient():
     tc = threading.Thread(target=Client)
@@ -414,7 +460,3 @@ MineButton = Button(root, text="Mine", command=StartMining)
 MineButton.grid(row=0, column=0)
 
 root.mainloop()
-
-
-
-
