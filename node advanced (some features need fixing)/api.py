@@ -10,24 +10,43 @@ from Address import Address
 from Transaction import Transaction
 
 
-blockchain = []
-nodes = []
 mempoolBlock = []
 mempool = []
-clients = []
-currentTranId = 0
-coinbase = Address("coinbase", 21000000)
 
 global connected, diff
 connected = False
 diff = 5
 
 root = Tk()
-root.title("Projekt Naloga 1")
+root.title("Projektna naloga Api")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
 ledger.grid(row=0, column=1, rowspan=5)
+
+def Speak(option, what, client):
+    client.send(option.encode("utf-8"))
+    client.recv(256)
+    if option == "API_LAST" or option == "API_CHAIN":
+        return
+    elif option == "API_ADDRESS_NEW":
+        tmp = json.dumps(EncodeJsonTran(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "API_ADDRESS_SEND":
+        tmp = json.dumps(EncodeJsonTran(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    else:
+        for i in what:
+            if option == "MEMPOOL_EXPAND":
+                tmp = json.dumps(EncodeJsonTran(i))
+            else:
+                tmp = json.dumps(EncodeJson(i))
+            client.send(tmp.encode("utf-8"))
+            client.recv(256)
+    client.send("FINISHED".encode("utf-8"))
+
 
 def Client():
     global mempoolBlock, mempool
@@ -71,29 +90,23 @@ def StartClient():
     tc.start()
     return
 
-def StartServer():
-    ts = threading.Thread(target=Server)
-    ts.start()
-    return
 
-def StartMining():
-    ts = threading.Thread(target=Mine)
-    ts.start()
-    return
+clientButton = Button(root, text="Client Mode", command=StartClient)
+clientButton.grid(row=0, column=0)
 
 returnChainButton=Button(root,text="Vrni celotno verigo", command=StartClient)
-returnChainButton.grid(row=0, column=0)
+returnChainButton.grid(row=1, column=0)
 
 returnLastBlockButton=Button(root,text="Vrni zadnji blok", command=StartClient)
-returnLastBlockButton.grid(row=1, column=0)
+returnLastBlockButton.grid(row=2, column=0)
 
 createNextBlockButton=Button(root,text="Ustvari nasljedeni blok", command=StartClient)
-createNextBlockButton.grid(row=2, column=0)
+createNextBlockButton.grid(row=3, column=0)
 
 switchChainButton=Button(root,text="Zamenjaj verigo", command=StartClient)
-switchChainButton.grid(row=3, column=0)
+switchChainButton.grid(row=4, column=0)
 
 addBlockButton=Button(root,text="Dodaj blok v verigo", command=StartClient)
-addBlockButton.grid(row=4, column=0)
+addBlockButton.grid(row=5, column=0)
 
 root.mainloop()
