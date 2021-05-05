@@ -105,13 +105,23 @@ def ReturnLastBlock():
     #print(client2.recv(256).decode("utf-8"))
     return      
 
-def NextBlock():
+def CreateNextBlock():
     tc = threading.Thread(target=Speak("API_ADDRESS_NEW", Transaction("senderAddr", "receiverAddr", 1000), client2) )
     tc.start()
     #print(client2.recv(256).decode("utf-8"))
     return  
     
+def SwitchChain():
+    #tc = threading.Thread(target= * )
+    #tc.start()
 
+    return 
+
+def AddBlock():
+    #tc = threading.Thread(target= * )
+    #tc.start()
+
+    return     
 
 
 clientButton = Button(root, text="Client Mode", command=StartClient)
@@ -123,13 +133,13 @@ returnChainButton.grid(row=1, column=0)
 returnLastBlockButton=Button(root,text="Vrni zadnji blok", command=ReturnLastBlock)
 returnLastBlockButton.grid(row=2, column=0)
 
-createNextBlockButton=Button(root,text="Ustvari nasljedeni blok", command=NextBlock)
+createNextBlockButton=Button(root,text="Ustvari nasljedeni blok", command=CreateNextBlock)
 createNextBlockButton.grid(row=3, column=0)
 
-switchChainButton=Button(root,text="Zamenjaj verigo", command=StartClient)
+switchChainButton=Button(root,text="Zamenjaj verigo", command=SwitchChain)
 switchChainButton.grid(row=4, column=0)
 
-addBlockButton=Button(root,text="Dodaj blok v verigo", command=StartClient)
+addBlockButton=Button(root,text="Dodaj blok v verigo", command=AddBlock)
 addBlockButton.grid(row=5, column=0)
 
 root.mainloop()
