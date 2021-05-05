@@ -22,7 +22,10 @@ root.title("Projektna naloga Api")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
-ledger.grid(row=0, column=1, rowspan=5)
+ledger.grid(row=1, column=1, rowspan=5)
+
+entry = Entry(root, width=50)
+entry.grid(row=0, column=1)
 
 def Speak(option, what, client):
     client.send(option.encode("utf-8"))
