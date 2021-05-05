@@ -90,17 +90,37 @@ def StartClient():
     tc.start()
     return
 
+def ReturnChain():
+    tc = threading.Thread(target=Speak("API_CHAIN", None, client2))
+    tc.start()
+    #print(Recieve(client2, "API_CHAIN"))
+    return    
+
+def ReturnLastBlock():
+    tc = threading.Thread(target=Speak("API_LAST", None, client2))
+    tc.start()
+    #print(client2.recv(256).decode("utf-8"))
+    return      
+
+def NextBlock():
+    tc = threading.Thread(target=Speak("API_ADDRESS_NEW", Transaction("senderAddr", "receiverAddr", 1000), client2) )
+    tc.start()
+    #print(client2.recv(256).decode("utf-8"))
+    return  
+    
+
+
 
 clientButton = Button(root, text="Client Mode", command=StartClient)
 clientButton.grid(row=0, column=0)
 
-returnChainButton=Button(root,text="Vrni celotno verigo", command=StartClient)
+returnChainButton=Button(root,text="Vrni celotno verigo", command=ReturnChain)
 returnChainButton.grid(row=1, column=0)
 
-returnLastBlockButton=Button(root,text="Vrni zadnji blok", command=StartClient)
+returnLastBlockButton=Button(root,text="Vrni zadnji blok", command=ReturnLastBlock)
 returnLastBlockButton.grid(row=2, column=0)
 
-createNextBlockButton=Button(root,text="Ustvari nasljedeni blok", command=StartClient)
+createNextBlockButton=Button(root,text="Ustvari nasljedeni blok", command=NextBlock)
 createNextBlockButton.grid(row=3, column=0)
 
 switchChainButton=Button(root,text="Zamenjaj verigo", command=StartClient)
