@@ -78,14 +78,15 @@ def Client():
     #API ZA STANJE NA NASLOVU
     #needs an implementation
 
-    while True:
-        try:
-            Speak("NODE", blockchain, client2)
-            Speak("MEMPOOL_EXPAND", mempool, client2)
-        except:
-            pass
-        print("loop")
-        time.sleep(3)
+    #THIS IS USED TO SPREAD THE BLOCKCHAIN AND MEMPOOL TO OTHER NODES
+    # while True:
+    #    try:
+    #        Speak("NODE", blockchain, client2)
+    #        Speak("MEMPOOL_EXPAND", mempool, client2)
+    #    except:
+    #        pass
+    #    print("loop")
+    #    time.sleep(3)
 
 
 def StartClient():
@@ -111,12 +112,14 @@ def CreateNextBlock():
     #print(client2.recv(256).decode("utf-8"))
     return  
     
+#CHAIN GETS SWITHCED BY THE NODES NOT THE API PROGRAM
 def SwitchChain():
     #tc = threading.Thread(target= * )
     #tc.start()
 
     return 
 
+#ONLY NODES ADD BLOCKS
 def AddBlock():
     #tc = threading.Thread(target= * )
     #tc.start()
