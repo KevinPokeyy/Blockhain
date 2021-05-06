@@ -17,6 +17,7 @@ global connected, diff
 connected = False
 diff = 5
 
+
 root = Tk()
 root.title("Projektna naloga Api")
 root.resizable(width=False, height=False)
@@ -26,6 +27,22 @@ ledger.grid(row=1, column=1, rowspan=5)
 
 entry = Entry(root, width=50)
 entry.grid(row=0, column=1)
+
+#Label
+var = StringVar()
+label =Label(root, textvariable=var, relief=RAISED ,width=50,height=2)
+label.grid(row=0, column=2)
+var.set("Transakcija ")
+
+#Sender vnos
+senderentry = Entry(root, width=50)
+senderentry.grid(row=1, column=2)
+#Reciever vnos
+recieverentry = Entry(root, width=50)
+recieverentry.grid(row=2, column=2)
+#Ammount vnos
+ammountentry = Entry(root, width=50)
+ammountentry.grid(row=3, column=2)
 
 def Speak(option, what, client):
     client.send(option.encode("utf-8"))
@@ -107,7 +124,10 @@ def ReturnLastBlock():
     return      
 
 def CreateNextBlock():
-    tc = threading.Thread(target=Speak("API_ADDRESS_NEW", Transaction("senderAddr", "receiverAddr", 1000), client2) )
+    senderAddr = str(senderentry.get())
+    receiverAddr = str(recieverentry.get())
+    ammount = int(ammountentry.get())
+    tc = threading.Thread(target=Speak("API_ADDRESS_NEW", Transaction(senderAddr, receiverAddr, ammount), client2) )
     tc.start()
     #print(client2.recv(256).decode("utf-8"))
     return  
