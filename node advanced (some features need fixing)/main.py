@@ -71,6 +71,16 @@ def CurrentDiff():
         diff = diff - 1
     return
 
+def CheckTransaction(tran):
+    if not tran.sender == "coinbase":
+        if GetState(tran.sender) < tran.amountSent:
+            mempool.remove(tran)
+            print("INVALID TRANSACTION")
+            return False
+    return True
+
+
+
 #preverjanje statusa denarnice
 def GetState(name):
     state = 0
@@ -254,7 +264,9 @@ def Mine():
         currentIndex = len(blockchain)
         currentData = "None"
         if not len(mempool) == 0:
-            currentData = str(EncodeJsonTran(mempool[0]))
+            for ta in mempool:
+                if CheckTransaction(ta):
+                    currentData = ta
         currentTime = datetime.now()
 
         if not blockchain:
@@ -403,6 +415,8 @@ def Client():
     client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client2.connect(("127.0.0.1", port))
     print("Connection established")
+    ogBLockchainSize = len(blockchain)
+    ogMempoolSize = len(mempool)
 
     #API ZA NOV BLOK
     #ni. Ker bloke samo ustvarjamo z rudarjenjem (lahko maybe naredimo da oglišče začne rudarit --_('_')_--
@@ -427,8 +441,12 @@ def Client():
 
     while True:
         try:
-            Speak("NODE", blockchain, client2)
-            Speak("MEMPOOL_EXPAND", mempool, client2)
+            if not ogBLockchainSize == len(blockchain):
+                Speak("NODE", blockchain, client2)
+                ogBLockchainSize = len(blockchain)
+            if not ogMempoolSize == len(mempool):
+                Speak("MEMPOOL_EXPAND", mempool, client2)
+                ogMempoolSize = len(mempool)
         except:
             pass
         print("loop")
