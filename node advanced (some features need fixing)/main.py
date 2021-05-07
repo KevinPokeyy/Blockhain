@@ -12,11 +12,11 @@ from Transaction import Transaction
 
 blockchain = []
 nodes = []
-mempoolBlock = []
 mempool = []
 clients = []
-currentTranId = 0
 coinbase = Address("coinbase", 21000000)
+serverPort = ""
+port = ""
 
 global connected, diff
 connected = False
@@ -71,6 +71,7 @@ def CurrentDiff():
         diff = diff - 1
     return
 
+#prevernanje transakcije
 def CheckTransaction(tran):
     if not tran.sender == "coinbase":
         if GetState(tran.sender) < tran.amountSent:
@@ -78,8 +79,6 @@ def CheckTransaction(tran):
             print("INVALID TRANSACTION")
             return False
     return True
-
-
 
 #preverjanje statusa denarnice
 def GetState(name):
@@ -100,29 +99,12 @@ def GetState(name):
     print(state)
     return state
 
-#pridobi zadnji id transakcije v blockchainu
-def GetLastId():
-    global currentTranId
-    tmp = 0
-    for b in blockchain:
-        if not b.data == "None":
-            print(b.data)
-
 #preverjanje če je transakcija že v blockchainu
 def CheckMempool():
     for t in mempool:
         for b in blockchain:
             if t.hash in b.data:
                 mempool.remove(t)
-
-#pridobi zadnji id transakcije v blockchainu
-def GetLastId():
-    global currentTranId
-    tmp = 0
-    for b in blockchain:
-        if not b.data == "None":
-            print(b.data)
-
 
 #fpogovor z strežnikom
 def Speak(option, what, client):
@@ -140,6 +122,14 @@ def Speak(option, what, client):
         client.recv(256)
     elif option == "API_ADDRESS_STATE":
         tmp = json.dumps(EncodeJsonAddr(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "NODES":
+        tmp = str(what)
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "CONNECT_WITH_ME":
+        tmp = str(what)
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     else:
@@ -171,6 +161,10 @@ def Recieve(client, option):
                 a = JsonToAddr(msg)
             elif option == "MEMPOOL_EXPAND":
                 a = JsonToTran(msg)
+            elif option == "NODES":
+                a = msg
+            elif option == "CONNECT_WITH_ME":
+                a = msg
             else:
                 a = JsonToBlock(msg)
             storage.append(a)
@@ -259,14 +253,14 @@ def FindValidHash(index, data, time, previousHash):
 
 #rudarjenje
 def Mine():
-    global client2, connected, port, diff, mempoolBlock
+    global client2, connected, port, diff
     while True:
         currentIndex = len(blockchain)
         currentData = "None"
         if not len(mempool) == 0:
             for ta in mempool:
                 if CheckTransaction(ta):
-                    currentData = ta
+                    currentData = json.dumps(EncodeJsonTran(ta))
         currentTime = datetime.now()
 
         if not blockchain:
@@ -303,7 +297,7 @@ def Mine():
 
 #obravnana z individualnimi clienti
 def HandleClient(client, address):
-    global blockchain, diff, mempoolBlock, mempool, clients
+    global blockchain, diff, mempoolBlock, mempool, clients, port
     while True:
         msg = client.recv(512).decode("utf-8")
         if msg == "NODE":
@@ -388,29 +382,34 @@ def HandleClient(client, address):
             addr = Recieve(client, "API_ADDRESS_STATE")
             addr[0].state = GetState(addr[0].name)
             Speak("API_ADDRESS_STATE", addr[0], client)
+            client.close()
+            return
 
-
-
-
+        elif msg == "CONNECT_WITH_ME":
+            port = Recieve(client, "CONNECT_WITH_ME")
+            tc = threading.Thread(target=AutomaticClient, args=(int(port[0]),))
+            tc.start()
+            msg = ""
 
 
 #oprtje porta za streženje
 def Server():
-    global sock
+    global sock, serverPort
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("127.0.0.1", 0))
     print("Listening on port:" + str(sock.getsockname()))
+    serverPort = sock.getsockname()[1]
     port.configure(text=sock.getsockname())
     while True:
         sock.listen()
         client, address = sock.accept()
-        print("Client has connected")
+        print(f"Client has connected {client}")
         threading.Thread(target=HandleClient, args=(client, address, )).start()
 
 
 #oprtje porta za pošiljanje
 def Client():
-    global mempoolBlock, mempool
+    global mempoolBlock, mempool, serverPort, port
     port = int(entry.get())
     client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client2.connect(("127.0.0.1", port))
@@ -436,8 +435,33 @@ def Client():
     #Speak("API_ADDRESS_NEW", Transaction("senderAddr", "receiverAddr", 1000), client2)
 
     #API ZA STANJE NA NASLOVU
-    #Speak("API_ADDRESS_STATE", Address("KevinDenarica", 0), client2)
-    #print(Recieve(client2, "API_ADDRESS_STATE").state())
+    #Speak("API_ADDRESS_STATE", Address("KevinDenarnica", 0), client2)
+    #print(Recieve(client2, "API_ADDRESS_STATE")[0].state)
+
+
+    #while True:
+    #    try:
+    #        if not ogBLockchainSize == len(blockchain):
+    #            Speak("NODE", blockchain, client2)
+    #            ogBLockchainSize = len(blockchain)
+    #        if not ogMempoolSize == len(mempool):
+    #            Speak("MEMPOOL_EXPAND", mempool, client2)
+    #            ogMempoolSize = len(mempool)
+    #    except:
+    #        pass
+    #    print("loop")
+    #    time.sleep(1)
+
+def AutomaticClient(port):
+    global mempoolBlock, mempool, serverPort
+    client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print(port)
+    client2.connect(("127.0.0.1", port))
+    print(f"Automatic Connection established with {client2.getsockname()}")
+    ogBLockchainSize = len(blockchain)
+    ogMempoolSize = len(mempool)
+    Speak("CONNECT_WITH_ME", serverPort, client2)
+    print("I have come to this point")
 
     while True:
         try:
@@ -450,7 +474,24 @@ def Client():
         except:
             pass
         print("loop")
-        time.sleep(3)
+        time.sleep(1)
+
+def AutomaticConnect():
+    global serverPort
+    #API ZA DOSTOP DO STREŽNIKA (VRNE VSE PORTE DRUGIH VOZLIŠČ)
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.connect(("127.0.0.1", 65519))
+
+    Speak("NODES", serverPort, server)
+    otherNodes = Recieve(server, "NODES")
+    print(f"printing other nodes: {otherNodes}")
+    #POVEZAVA S TEMI VOZLIŠČI
+    for n in otherNodes:
+        if not str(n) in str(serverPort):
+            ts = threading.Thread(target=AutomaticClient, args=(int(n),))
+            ts.start()
+
 
 def StartClient():
     tc = threading.Thread(target=Client)
@@ -467,9 +508,16 @@ def StartMining():
     ts.start()
     return
 
+def StartAutomaticConnect():
+    ts = threading.Thread(target=AutomaticConnect)
+    ts.start()
+    return
 
 clientButton = Button(root, text="Client Mode", command=StartClient)
 clientButton.grid(row=0, column=4)
+
+connectButton = Button(root, text="Automatic connect", command=StartAutomaticConnect)
+connectButton.grid(row=0, column=3)
 
 serverButton = Button(root, text="Server Mode", command=StartServer)
 serverButton.grid(row=0, column=1)
@@ -478,3 +526,4 @@ MineButton = Button(root, text="Mine", command=StartMining)
 MineButton.grid(row=0, column=0)
 
 root.mainloop()
+
