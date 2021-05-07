@@ -14,6 +14,7 @@ blockchain = []
 nodes = []
 mempool = []
 clients = []
+ports = []
 coinbase = Address("coinbase", 21000000)
 serverPort = ""
 port = ""
@@ -27,7 +28,7 @@ root.title("Projekt Naloga 1")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
-ledger.grid(row=1, column=0, columnspan=3)
+ledger.grid(row=1, column=0, columnspan=4)
 
 hashText = Text(root)
 hashText.grid(row=1, column=4, columnspan=2)
@@ -386,10 +387,11 @@ def HandleClient(client, address):
             return
 
         elif msg == "CONNECT_WITH_ME":
-            port = Recieve(client, "CONNECT_WITH_ME")
-            tc = threading.Thread(target=AutomaticClient, args=(int(port[0]),))
-            tc.start()
             msg = ""
+            stor = Recieve(client, "CONNECT_WITH_ME")
+            tc = threading.Thread(target=AutomaticClient, args=(int(stor[0]),))
+            tc.start()
+
 
 
 #oprtje porta za streženje
@@ -439,24 +441,28 @@ def Client():
     #print(Recieve(client2, "API_ADDRESS_STATE")[0].state)
 
 
-    #while True:
-    #    try:
-    #        if not ogBLockchainSize == len(blockchain):
-    #            Speak("NODE", blockchain, client2)
-    #            ogBLockchainSize = len(blockchain)
-    #        if not ogMempoolSize == len(mempool):
-    #            Speak("MEMPOOL_EXPAND", mempool, client2)
-    #            ogMempoolSize = len(mempool)
-    #    except:
-    #        pass
-    #    print("loop")
-    #    time.sleep(1)
+    while True:
+        try:
+            if not ogBLockchainSize == len(blockchain):
+                Speak("NODE", blockchain, client2)
+                ogBLockchainSize = len(blockchain)
+            if not ogMempoolSize == len(mempool):
+                Speak("MEMPOOL_EXPAND", mempool, client2)
+                ogMempoolSize = len(mempool)
+        except:
+            pass
+        print("loop")
+        time.sleep(1)
 
 def AutomaticClient(port):
     global mempoolBlock, mempool, serverPort
+    if port in ports:
+        return
+    ports.append(port)
     client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(port)
     client2.connect(("127.0.0.1", port))
+    clients.append(client2)
     print(f"Automatic Connection established with {client2.getsockname()}")
     ogBLockchainSize = len(blockchain)
     ogMempoolSize = len(mempool)
@@ -481,7 +487,7 @@ def AutomaticConnect():
     #API ZA DOSTOP DO STREŽNIKA (VRNE VSE PORTE DRUGIH VOZLIŠČ)
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.connect(("127.0.0.1", 65519))
+    server.connect(("127.0.0.1", 65518))
 
     Speak("NODES", serverPort, server)
     otherNodes = Recieve(server, "NODES")
@@ -513,13 +519,13 @@ def StartAutomaticConnect():
     ts.start()
     return
 
-clientButton = Button(root, text="Client Mode", command=StartClient)
+clientButton = Button(root, text="Manual connect", command=StartClient)
 clientButton.grid(row=0, column=4)
 
 connectButton = Button(root, text="Automatic connect", command=StartAutomaticConnect)
 connectButton.grid(row=0, column=3)
 
-serverButton = Button(root, text="Server Mode", command=StartServer)
+serverButton = Button(root, text="Open port", command=StartServer)
 serverButton.grid(row=0, column=1)
 
 MineButton = Button(root, text="Mine", command=StartMining)
