@@ -8,6 +8,7 @@ from datetime import datetime
 from Block import Block
 from Address import Address
 from Transaction import Transaction
+import crypto
 
 
 blockchain = []
@@ -113,6 +114,10 @@ def Speak(option, what, client):
     client.recv(256)
     if option == "API_LAST" or option == "API_CHAIN":
         return
+    elif option == "NODE_LAST":
+        tmp = json.dumps(EncodeJson(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
     elif option == "API_ADDRESS_NEW":
         tmp = json.dumps(EncodeJsonTran(what))
         client.send(tmp.encode("utf-8"))
@@ -151,7 +156,7 @@ def Recieve(client, option):
     if option == "API_LAST":
         return
     while True:
-        msg = client.recv(512).decode("utf-8")
+        msg = client.recv(2048).decode("utf-8")
         try:
             msg = json.loads(msg)
             if option == "API_ADDRESS_NEW":
@@ -193,7 +198,7 @@ def EncodeJsonAddr(obj):
 
 #serializacija Transakcije
 def EncodeJsonTran(obj):
-    return {"sender": obj.sender, "receiver": obj.receiver, "amountSent": obj.amountSent, "time": obj.time, "hash": obj.hash}
+    return {"sender": obj.sender, "receiver": obj.receiver, "amountSent": obj.amountSent, "time": obj.time, "signature": obj.signature}
 
 #spreminjanje json stringa nazaj v Block
 def JsonToBlock(jsonStr):
@@ -205,9 +210,8 @@ def JsonToAddr(jsonStr):
 
 #deserializacija transakcije
 def JsonToTran(jsonStr):
-    tran = Transaction(jsonStr["sender"], jsonStr["receiver"], jsonStr["amountSent"])
+    tran = Transaction(jsonStr["sender"], jsonStr["receiver"], jsonStr["amountSent"], jsonStr["signature"])
     tran.time = jsonStr["time"]
-    tran.hash = jsonStr["hash"]
     return tran
 
 
@@ -342,9 +346,8 @@ def HandleClient(client, address):
 
         #pridobitev zadnjega bloka
         elif msg == "API_LAST":
-            Recieve(client, "API_LAST")
-            tmp = json.dumps(EncodeJson(blockchain[len(blockchain) - 1]))
-            client.send(tmp.encode("utf-8"))
+            tmp = blockchain[len(blockchain) - 1]
+            Speak("NODE_LAST", tmp, client)
 
 
         #pridobitev cele verige
@@ -441,18 +444,18 @@ def Client():
     #print(Recieve(client2, "API_ADDRESS_STATE")[0].state)
 
 
-    while True:
-        try:
-            if not ogBLockchainSize == len(blockchain):
-                Speak("NODE", blockchain, client2)
-                ogBLockchainSize = len(blockchain)
-            if not ogMempoolSize == len(mempool):
-                Speak("MEMPOOL_EXPAND", mempool, client2)
-                ogMempoolSize = len(mempool)
-        except:
-            pass
-        print("loop")
-        time.sleep(1)
+    #while True:
+    #    try:
+    #        if not ogBLockchainSize == len(blockchain):
+    #            Speak("NODE", blockchain, client2)
+    #            ogBLockchainSize = len(blockchain)
+    #        if not ogMempoolSize == len(mempool):
+    #            Speak("MEMPOOL_EXPAND", mempool, client2)
+    #            ogMempoolSize = len(mempool)
+    #    except:
+    #        pass
+    #    print("loop")
+    #    time.sleep(1)
 
 def AutomaticClient(port):
     global mempoolBlock, mempool, serverPort
