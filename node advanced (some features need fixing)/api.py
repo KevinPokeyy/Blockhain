@@ -44,6 +44,68 @@ recieverentry.grid(row=2, column=2)
 ammountentry = Entry(root, width=50)
 ammountentry.grid(row=3, column=2)
 
+#fsprejemanje pogovora od odjemalca
+def Recieve(client, option):
+    storage = []
+    client.send("E".encode("utf-8"))
+    if option == "API_LAST":
+        return
+    while True:
+        msg = client.recv(512).decode("utf-8")
+        try:
+            msg = json.loads(msg)
+            if option == "API_ADDRESS_NEW":
+                a = JsonToTran(msg)
+            elif option == "API_ADDRESS_SEND":
+                a = JsonToTran(msg)
+            elif option == "API_ADDRESS_STATE":
+                a = JsonToAddr(msg)
+            elif option == "MEMPOOL_EXPAND":
+                a = JsonToTran(msg)
+            elif option == "NODES":
+                a = msg
+            elif option == "CONNECT_WITH_ME":
+                a = msg
+            else:
+                a = JsonToBlock(msg)
+            storage.append(a)
+            client.send("E".encode("utf-8"))
+        except:
+            pass
+        if msg == "FINISHED":
+            return storage
+
+
+#Serializacija Block classa
+def EncodeJson(obj):
+    return {"index": obj.index, "data": obj.data, "hash": obj.hash, "time": obj.time, "previousHash": obj.previousHash, "diff": obj.diff, "nonce": obj.nonce}
+
+#serializacija Address classa
+def EncodeJsonAddr(obj):
+    return {"name": obj.name, "state": obj.state}
+
+#serializacija Transakcije
+def EncodeJsonTran(obj):
+    return {"sender": obj.sender, "receiver": obj.receiver, "amountSent": obj.amountSent, "time": obj.time, "hash": obj.hash}
+
+#spreminjanje json stringa nazaj v Block
+def JsonToBlock(jsonStr):
+    return Block(jsonStr["index"], jsonStr["data"], jsonStr["time"], jsonStr["hash"], jsonStr["previousHash"], jsonStr["diff"], jsonStr["nonce"])
+
+#spreminjanje json stringa nazaj v Address
+def JsonToAddr(jsonStr):
+    return Address(jsonStr["name"], jsonStr["state"])
+
+#deserializacija transakcije
+def JsonToTran(jsonStr):
+    tran = Transaction(jsonStr["sender"], jsonStr["receiver"], jsonStr["amountSent"])
+    tran.time = jsonStr["time"]
+    tran.hash = jsonStr["hash"]
+    return tran
+
+
+
+
 def Speak(option, what, client):
     client.send(option.encode("utf-8"))
     client.recv(256)
@@ -69,7 +131,7 @@ def Speak(option, what, client):
 
 
 def Client():
-    global mempoolBlock, mempool
+    global mempoolBlock, mempool,client2
     port = int(entry.get())
     client2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client2.connect(("127.0.0.1", port))
@@ -114,13 +176,13 @@ def StartClient():
 def ReturnChain():
     tc = threading.Thread(target=Speak("API_CHAIN", None, client2))
     tc.start()
-    #print(Recieve(client2, "API_CHAIN"))
+    ledger.insert(END,client2.recv(256).decode("utf-8"),Recieve(client2, "API_CHAIN"))
     return    
 
 def ReturnLastBlock():
     tc = threading.Thread(target=Speak("API_LAST", None, client2))
     tc.start()
-    #print(client2.recv(256).decode("utf-8"))
+    ledger.insert(END,client2.recv(256).decode("utf-8"))
     return      
 
 def CreateNextBlock():
