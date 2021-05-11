@@ -8,7 +8,10 @@ from datetime import datetime
 from Block import Block
 from Address import Address
 from Transaction import Transaction
-import crypto
+from types import SimpleNamespace
+from collections import namedtuple
+
+
 
 
 blockchain = []
@@ -75,6 +78,7 @@ def CurrentDiff():
 
 #prevernanje transakcije
 def CheckTransaction(tran):
+    global mempool
     if not tran.sender == "coinbase":
         if GetState(tran.sender) < tran.amountSent:
             mempool.remove(tran)
@@ -96,8 +100,16 @@ def GetState(name):
                 tran = JsonToTran(tran)
                 if name == tran.sender:
                     state = state - tran.amountSent
-                elif name == tran.receiver:
-                    state = state + tran.amountSent
+                else:
+                    receivers = str(tran.receiver)
+                    receivers = receivers.replace("\'", "\"")
+                    addr = json.loads(receivers, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+                    if isinstance(addr, list):
+                        for a in addr:
+                            if a.name == name:
+                                state = state + float(a.amount)
+                    else:
+                        state = state + float(addr.amount)
     print(state)
     return state
 
@@ -105,8 +117,12 @@ def GetState(name):
 def CheckMempool():
     for t in mempool:
         for b in blockchain:
-            if t.hash in b.data:
-                mempool.remove(t)
+            if t.sender != "coinbase":
+                if t.signature in b.data:
+                    try:
+                        mempool.remove(t)
+                    except:
+                        pass
 
 #fpogovor z strežnikom
 def Speak(option, what, client):
@@ -119,11 +135,11 @@ def Speak(option, what, client):
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     elif option == "API_ADDRESS_NEW":
-        tmp = json.dumps(EncodeJsonTran(what))
+        tmp = json.dumps(what, default=lambda o: o.__dict__, sort_keys=False)
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     elif option == "API_ADDRESS_SEND":
-        tmp = json.dumps(EncodeJsonTran(what))
+        tmp = json.dumps(what, default=lambda o: o.__dict__, sort_keys=False)
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     elif option == "API_ADDRESS_STATE":
@@ -141,7 +157,7 @@ def Speak(option, what, client):
     else:
         for i in what:
             if option == "MEMPOOL_EXPAND":
-                tmp = json.dumps(EncodeJsonTran(i))
+                tmp = json.dumps(i, default=lambda o: o.__dict__, sort_keys=False)
             else:
                 tmp = json.dumps(EncodeJson(i))
             client.send(tmp.encode("utf-8"))
@@ -194,7 +210,7 @@ def EncodeJson(obj):
 
 #serializacija Address classa
 def EncodeJsonAddr(obj):
-    return {"name": obj.name, "state": obj.state}
+    return {"name": obj.name, "amount": obj.amount}
 
 #serializacija Transakcije
 def EncodeJsonTran(obj):
@@ -206,7 +222,7 @@ def JsonToBlock(jsonStr):
 
 #spreminjanje json stringa nazaj v Address
 def JsonToAddr(jsonStr):
-    return Address(jsonStr["name"], jsonStr["state"])
+    return Address(jsonStr["name"], jsonStr["amount"])
 
 #deserializacija transakcije
 def JsonToTran(jsonStr):
@@ -258,14 +274,14 @@ def FindValidHash(index, data, time, previousHash):
 
 #rudarjenje
 def Mine():
-    global client2, connected, port, diff
+    global client2, connected, port, diff, mempool
     while True:
         currentIndex = len(blockchain)
         currentData = "None"
+        CheckMempool()
         if not len(mempool) == 0:
-            for ta in mempool:
-                if CheckTransaction(ta):
-                    currentData = json.dumps(EncodeJsonTran(ta))
+            if CheckTransaction(mempool[0]):
+                currentData = json.dumps(mempool[0], default=lambda o: o.__dict__, sort_keys=False)
         currentTime = datetime.now()
 
         if not blockchain:
@@ -275,6 +291,7 @@ def Mine():
 
 
         a = FindValidHash(currentIndex, currentData, currentTime, currentPrevHash)
+        CheckMempool()
         inBlockchain = False
         for b in blockchain:
             if a.data in b.data and not a.data == "None":
@@ -284,6 +301,8 @@ def Mine():
             blockchain.append(a)
             ledger.insert(END, f"\nIndex: {a.index}\ndiff: {a.diff}\nData: {a.data}\nHash: {a.hash}\nTimestamp: {a.time}\nNonce: {a.nonce}\nPrevHash: {a.previousHash}\n")
             ledger.see(END)
+            if not currentData == "None":
+                mempool.remove(mempool[0])
         elif not inBlockchain:
             if Validate(a, blockchain[len(blockchain) - 1]):
                 blockchain.append(a)
@@ -291,7 +310,8 @@ def Mine():
                 ledger.see(END)
                 print("Block has been added")
                 print(a.hash)
-                print(mempool)
+                for m in mempool:
+                    print(mempool.index(m))
                 if not currentData == "None":
                     mempool.remove(mempool[0])
             else:
@@ -310,6 +330,7 @@ def HandleClient(client, address):
                 clients.append(client)
             imposter = Recieve(client, "NODE")
             if CmpChains(imposter):
+                CheckMempool()
                 blockchain = imposter.copy()
                 diff = blockchain[len(blockchain) - 1].diff
                 imposter.clear()
@@ -329,12 +350,13 @@ def HandleClient(client, address):
             for i in imposterMem:
                 inBlockchain = False
                 for b in blockchain:
-                    if i.hash in b.data:
-                        inBlockchain = True
+                    if i.sender != "coinbase":
+                        if i.signature in b.data:
+                            inBlockchain = True
                 if not inBlockchain:
                     inMempool = 0
                     for t in mempool:
-                        if t.hash == i.hash:
+                        if t.signature == i.signature:
                             inMempool = inMempool + 1
                     if inMempool <= 0:
                         mempool.append(i)
@@ -384,10 +406,10 @@ def HandleClient(client, address):
 
         elif msg == "API_ADDRESS_STATE":
             addr = Recieve(client, "API_ADDRESS_STATE")
-            addr[0].state = GetState(addr[0].name)
+            addr[0].amount = GetState(addr[0].name)
+            time.sleep(0.3)
             Speak("API_ADDRESS_STATE", addr[0], client)
-            client.close()
-            return
+
 
         elif msg == "CONNECT_WITH_ME":
             msg = ""
@@ -444,18 +466,18 @@ def Client():
     #print(Recieve(client2, "API_ADDRESS_STATE")[0].state)
 
 
-    #while True:
-    #    try:
-    #        if not ogBLockchainSize == len(blockchain):
-    #            Speak("NODE", blockchain, client2)
-    #            ogBLockchainSize = len(blockchain)
-    #        if not ogMempoolSize == len(mempool):
-    #            Speak("MEMPOOL_EXPAND", mempool, client2)
-    #            ogMempoolSize = len(mempool)
-    #    except:
-    #        pass
-    #    print("loop")
-    #    time.sleep(1)
+    while True:
+        try:
+            if not ogBLockchainSize == len(blockchain):
+                Speak("NODE", blockchain, client2)
+                ogBLockchainSize = len(blockchain)
+            if not ogMempoolSize == len(mempool):
+                Speak("MEMPOOL_EXPAND", mempool, client2)
+                ogMempoolSize = len(mempool)
+        except:
+            pass
+        print("loop")
+        time.sleep(1)
 
 def AutomaticClient(port):
     global mempoolBlock, mempool, serverPort

@@ -25,11 +25,11 @@ connected = False
 diff = 5
 
 root = Tk()
-root.title("Projektna naloga Api")
+root.title("The one and only API (be amazed by its functionality)")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
-ledger.grid(row=1, column=1, rowspan=5)
+ledger.grid(row=1, column=1, rowspan=6)
 
 entry = Entry(root, width=50)
 entry.grid(row=0, column=1)
@@ -37,18 +37,32 @@ entry.grid(row=0, column=1)
 # Label
 var = StringVar()
 label = Label(root, textvariable=var, relief=RAISED, width=50, height=2)
-label.grid(row=0, column=2)
-var.set("Transakcija ")
+label.grid(row=0, column=2, columnspan=2)
+var.set("Input fields")
 
 # Sender vnos
 senderentry = Entry(root, width=50)
-senderentry.grid(row=1, column=2)
+senderentry.grid(row=1, column=2, columnspan=2)
+
 # Reciever vnos
-recieverentry = Entry(root, width=50,)
+recieverentry = Entry(root, width=20,)
 recieverentry.grid(row=2, column=2)
+recieverentryAmount = Entry(root, width=20,)
+recieverentryAmount.grid(row=2, column=3)
+
+recieverentry2 = Entry(root, width=20,)
+recieverentry2.grid(row=3, column=2)
+recieverentryAmount2 = Entry(root, width=20,)
+recieverentryAmount2.grid(row=3, column=3)
+
+recieverentry3 = Entry(root, width=20,)
+recieverentry3.grid(row=4, column=2)
+recieverentryAmount3 = Entry(root, width=20,)
+recieverentryAmount3.grid(row=4, column=3)
+
 # Ammount vnos
 ammountentry = Entry(root, width=50)
-ammountentry.grid(row=3, column=2)
+ammountentry.grid(row=5, column=2, columnspan=2)
 
 
 #Serializacija Block classa
@@ -57,7 +71,7 @@ def EncodeJson(obj):
 
 #serializacija Address classa
 def EncodeJsonAddr(obj):
-    return {"name": obj.name, "state": obj.state}
+    return {"name": obj.name, "amount": obj.amount}
 
 #serializacija Transakcije
 def EncodeJsonTran(obj):
@@ -69,7 +83,7 @@ def JsonToBlock(jsonStr):
 
 #spreminjanje json stringa nazaj v Address
 def JsonToAddr(jsonStr):
-    return Address(jsonStr["name"], jsonStr["state"])
+    return Address(jsonStr["name"], jsonStr["amount"])
 
 #deserializacija transakcije
 def JsonToTran(jsonStr):
@@ -84,17 +98,21 @@ def Speak(option, what, client):
     if option == "API_LAST" or option == "API_CHAIN":
         return
     elif option == "API_ADDRESS_NEW":
-        tmp = json.dumps(EncodeJsonTran(what))
+        tmp = json.dumps(what, default=lambda o: o.__dict__, sort_keys=False)
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     elif option == "API_ADDRESS_SEND":
-        tmp = json.dumps(EncodeJsonTran(what))
+        tmp = json.dumps(what, default=lambda o: o.__dict__, sort_keys=False)
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "API_ADDRESS_STATE":
+        tmp = json.dumps(EncodeJsonAddr(what))
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     else:
         for i in what:
             if option == "MEMPOOL_EXPAND":
-                tmp = json.dumps(EncodeJsonTran(i))
+                tmp = json.dumps(i, default=lambda o: o.__dict__, sort_keys=False)
             else:
                 tmp = json.dumps(EncodeJson(i))
             client.send(tmp.encode("utf-8"))
@@ -198,7 +216,7 @@ def ReturnLastBlock():
 
 def CreateTransaction():
     receiverAddr = str(recieverentry.get())
-    ammount = int(ammountentry.get())
+    ammount = 0
 
     if turn == False:
         senderAddr = USER1.pubKey
@@ -208,9 +226,19 @@ def CreateTransaction():
         sender = USER2
     else:
         senderAddr = str(recieverentry.get())
+    Naslovi = []
+    if not str(recieverentry.get()) == "":
+        Naslovi.append(Address(str(recieverentry.get()), float(recieverentryAmount.get())))
+        ammount = ammount + float(recieverentryAmount.get())
+    if not str(recieverentry2.get()) == "":
+        Naslovi.append(Address(str(recieverentry2.get()), float(recieverentryAmount2.get())))
+        ammount = ammount + float(recieverentryAmount2.get())
+    if not str(recieverentry3.get()) == "":
+        Naslovi.append(Address(str(recieverentry3.get()), float(recieverentryAmount3.get())))
+        ammount = ammount + float(recieverentryAmount3.get())
 
-    Speak("API_ADDRESS_NEW", Transaction(str(senderAddr), str(receiverAddr), ammount, str(hexlify(rsa.sign(
-        bytes((f"{str(senderAddr)}{str(receiverAddr)}{str(ammount)}").encode("utf-8")), sender.priKey, "SHA-256")))), client2)
+    Speak("API_ADDRESS_NEW", Transaction(str(senderAddr.n), Naslovi, ammount, hexlify(rsa.sign(
+        (f"{str(senderAddr)}{str(Naslovi)}{str(ammount)}{time}").encode("utf-8"), sender.priKey, "SHA-256")).decode("utf-8")), client2)
     return
 
 def CreateNewAddress():
@@ -225,7 +253,7 @@ def CreateNewAddress():
     else:
         receiverAddr = str(recieverentry.get())
 
-    Speak("API_ADDRESS_NEW", Transaction("coinbase", str(receiverAddr), ammount, str(0)), client2)
+    Speak("API_ADDRESS_NEW", Transaction("coinbase", Address(str(receiverAddr.n), ammount), ammount, str(0)), client2)
     return
 
 def GenerateAddress():
@@ -258,7 +286,19 @@ def GenerateAddress():
     #signature2 = rsa.pkcs1.sign(b"kevin", privkey, "SHA-256")
     #rsa.pkcs1.verify(b"kevin2", signature2, pubkeyOg)
 
+def GetState():
+    senderAddr = str(senderentry.get())
 
+    Speak("API_ADDRESS_STATE", Address(senderAddr, 0), client2)
+    addrState = Recieve(client2, "API_ADDRESS_STATE")
+    addrState = addrState[0].amount
+    ledger.insert(END, f"State: {addrState}\n\n")
+    ledger.see(END)
+
+def startState():
+    ts = threading.Thread(target=GetState)
+    ts.start()
+    return
 
 clientButton = Button(root, text="Connect", command=StartClient)
 clientButton.grid(row=0, column=0)
@@ -278,9 +318,11 @@ createNextBlockButton.grid(row=4, column=0)
 createNextBlockButton = Button(root, text="Generate Address", command=GenerateAddress)
 createNextBlockButton.grid(row=5, column=0)
 
+returnState = Button(root, text="getState", command=startState)
+returnState.grid(row=6, column=0)
+
 
 root.mainloop()
-
 
 
 
