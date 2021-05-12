@@ -19,6 +19,7 @@ client2 = None
 USER1 = None
 USER2 = None
 turn = True
+CURRENTUSER= None
 
 global connected, diff
 connected = False
@@ -29,40 +30,40 @@ root.title("The one and only API (be amazed by its functionality)")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
-ledger.grid(row=1, column=1, rowspan=6)
+ledger.grid(row=1, column=1, rowspan=6,columnspan=4)
 
 entry = Entry(root, width=50)
 entry.grid(row=0, column=1)
 
 # Label
 var = StringVar()
-label = Label(root, textvariable=var, relief=RAISED, width=50, height=2)
-label.grid(row=0, column=2, columnspan=2)
+label = Label(root, textvariable=var, height=2)
+label.grid(row=0, column=5, columnspan=2)
 var.set("Input fields")
 
 # Sender vnos
 senderentry = Entry(root, width=50)
-senderentry.grid(row=1, column=2, columnspan=2)
+senderentry.grid(row=1, column=5, columnspan=2)
 
 # Reciever vnos
 recieverentry = Entry(root, width=20,)
-recieverentry.grid(row=2, column=2)
+recieverentry.grid(row=2, column=5)
 recieverentryAmount = Entry(root, width=20,)
-recieverentryAmount.grid(row=2, column=3)
+recieverentryAmount.grid(row=2, column=6)
 
 recieverentry2 = Entry(root, width=20,)
-recieverentry2.grid(row=3, column=2)
+recieverentry2.grid(row=3, column=5)
 recieverentryAmount2 = Entry(root, width=20,)
-recieverentryAmount2.grid(row=3, column=3)
+recieverentryAmount2.grid(row=3, column=6)
 
 recieverentry3 = Entry(root, width=20,)
-recieverentry3.grid(row=4, column=2)
+recieverentry3.grid(row=4, column=5)
 recieverentryAmount3 = Entry(root, width=20,)
-recieverentryAmount3.grid(row=4, column=3)
+recieverentryAmount3.grid(row=4, column=6)
 
 # Ammount vnos
 ammountentry = Entry(root, width=50)
-ammountentry.grid(row=5, column=2, columnspan=2)
+ammountentry.grid(row=5, column=5, columnspan=2)
 
 
 #Serializacija Block classa
@@ -218,14 +219,21 @@ def CreateTransaction():
     receiverAddr = str(recieverentry.get())
     ammount = 0
 
-    if turn == False:
-        senderAddr = USER1.pubKey
-        sender = USER1
-    elif turn == True and not USER1 == None:
-        senderAddr = USER2.pubKey
-        sender = USER2
+    #if turn == False:
+    #    senderAddr = USER1.pubKey
+    #    sender = USER1
+    #elif turn == True and not USER1 == None:
+    #    senderAddr = USER2.pubKey
+    #    sender = USER2
+    #else:
+    #    senderAddr = str(recieverentry.get())
+
+    if CURRENTUSER != None:
+        senderAddr = CURRENTUSER.pubKey
+        sender = CURRENTUSER
     else:
         senderAddr = str(recieverentry.get())
+
     Naslovi = []
     if not str(recieverentry.get()) == "":
         Naslovi.append(Address(str(recieverentry.get()), float(recieverentryAmount.get())))
@@ -242,16 +250,22 @@ def CreateTransaction():
     return
 
 def CreateNewAddress():
-    global turn, USER1, USER2
+    global turn, USER1, USER2,CURRENTUSER
     ammount = int(ammountentry.get())
-    if turn == False:
-        receiverAddr = USER1.pubKey
-        reciever = USER1
-    elif turn == True and not USER1 == None:
-        receiverAddr = USER2.pubKey
-        receiver = USER2
+    #if turn == False:
+    #    receiverAddr = USER1.pubKey
+    #    reciever = USER1
+    #elif turn == True and not USER1 == None:
+    #    receiverAddr = USER2.pubKey
+    #    receiver = USER2
+    #else:
+    #    receiverAddr = str(recieverentry.get())
+
+    if CURRENTUSER != None:
+        receiverAddr = CURRENTUSER.pubKey
+        receiver = CURRENTUSER
     else:
-        receiverAddr = str(recieverentry.get())
+        receiverAddr = str(recieverentry.get())    
 
     Speak("API_ADDRESS_NEW", Transaction("coinbase", Address(str(receiverAddr.n), ammount), ammount, str(0)), client2)
     return
@@ -300,31 +314,57 @@ def startState():
     ts.start()
     return
 
-clientButton = Button(root, text="Connect", command=StartClient)
+
+
+clientButton = Button(root, text="Connect", command=StartClient, width=15)
 clientButton.grid(row=0, column=0)
 
-returnChainButton = Button(root, text="Get Blockchain", command=ReturnChain)
+returnChainButton = Button(root, text="Get Blockchain", command=ReturnChain, width=15)
 returnChainButton.grid(row=1, column=0)
 
-returnLastBlockButton = Button(root, text="Last Block", command=ReturnLastBlock)
+returnLastBlockButton = Button(root, text="Last Block", command=ReturnLastBlock, width=15)
 returnLastBlockButton.grid(row=2, column=0)
 
-createNextBlockButton = Button(root, text="Send Transaction", command=CreateTransaction)
+createNextBlockButton = Button(root, text="Send Transaction", command=CreateTransaction, width=15)
 createNextBlockButton.grid(row=3, column=0)
 
-createNextBlockButton = Button(root, text="Send Address", command=CreateNewAddress)
+createNextBlockButton = Button(root, text="Send Address", command=CreateNewAddress, width=15)
 createNextBlockButton.grid(row=4, column=0)
 
-createNextBlockButton = Button(root, text="Generate Address", command=GenerateAddress)
+createNextBlockButton = Button(root, text="Generate Address", command=GenerateAddress, width=15)
 createNextBlockButton.grid(row=5, column=0)
 
-returnState = Button(root, text="getState", command=startState)
+returnState = Button(root, text="getState", command=startState, width=15)
 returnState.grid(row=6, column=0)
+
+#User selection
+def CurrentUser1():
+    global CURRENTUSER
+    CURRENTUSER=USER1
+    return
+
+def CurrentUser2():
+    global CURRENTUSER
+    CURRENTUSER=USER2
+    return   
+
+def DeleteCurrent():
+    global CURRENTUSER
+    CURRENTUSER=None
+    return  
+
+user1button= Button(root, text="User1", command=CurrentUser1, width=10)
+user1button.grid(row=0, column=2)
+user2button= Button(root, text="User2", command=CurrentUser2, width=10)
+user2button.grid(row=0, column=3)
+
+deleteUser= Button(root, text="DeleteCurrent", command=DeleteCurrent, width=10)
+deleteUser.grid(row=0, column=4)
+
+
+
+
+
 
 
 root.mainloop()
-
-
-
-
-
