@@ -26,13 +26,13 @@ connected = False
 diff = 5
 
 root = Tk()
-root.title("The one and only API (be amazed by its functionality)")
+root.title("The \"WANNABE\" websocket API")
 root.resizable(width=False, height=False)
 
 ledger = Text(root)
 ledger.grid(row=1, column=1, rowspan=6,columnspan=4)
 
-entry = Entry(root, width=50)
+entry = Entry(root, width=30)
 entry.grid(row=0, column=1)
 
 # Label
@@ -96,7 +96,7 @@ def JsonToTran(jsonStr):
 def Speak(option, what, client):
     client.send(option.encode("utf-8"))
     client.recv(256)
-    if option == "API_LAST" or option == "API_CHAIN":
+    if option == "API_LAST" or option == "API_CHAIN" or option == "API_MINE":
         return
     elif option == "API_ADDRESS_NEW":
         tmp = json.dumps(what, default=lambda o: o.__dict__, sort_keys=False)
@@ -251,7 +251,7 @@ def CreateTransaction():
 
 def CreateNewAddress():
     global turn, USER1, USER2,CURRENTUSER
-    ammount = int(ammountentry.get())
+    ammount = 0
     #if turn == False:
     #    receiverAddr = USER1.pubKey
     #    reciever = USER1
@@ -261,13 +261,37 @@ def CreateNewAddress():
     #else:
     #    receiverAddr = str(recieverentry.get())
 
+    Naslovi = []
+
+    if str(recieverentry.get()) == "USER1":
+        Naslovi.append(Address(str(USER1.pubKey.n), float(recieverentryAmount.get())))
+        ammount = ammount + float(recieverentryAmount.get())
+    elif str(recieverentry.get()) == "USER2":
+        Naslovi.append(Address(str(USER2.pubKey.n), float(recieverentryAmount.get())))
+        ammount = ammount + float(recieverentryAmount.get())
+
+    if str(recieverentry2.get()) == "USER1":
+        Naslovi.append(Address(str(USER1.pubKey.n), float(recieverentryAmount2.get())))
+        ammount = ammount + float(recieverentryAmount2.get())
+    elif str(recieverentry2.get()) == "USER2":
+        Naslovi.append(Address(str(USER2.pubKey.n), float(recieverentryAmount2.get())))
+        ammount = ammount + float(recieverentryAmount2.get())
+
+
+    if str(recieverentry3.get()) == "USER1":
+        Naslovi.append(Address(str(USER1.pubKey.n), float(recieverentryAmount3.get())))
+        ammount = ammount + float(recieverentryAmount3.get())
+    elif str(recieverentry3.get()) == "USER2":
+        Naslovi.append(Address(str(USER2.pubKey.n), float(recieverentryAmount3.get())))
+        ammount = ammount + float(recieverentryAmount3.get())
+
     if CURRENTUSER != None:
         receiverAddr = CURRENTUSER.pubKey
         receiver = CURRENTUSER
     else:
         receiverAddr = str(recieverentry.get())    
 
-    Speak("API_ADDRESS_NEW", Transaction("coinbase", Address(str(receiverAddr.n), ammount), ammount, str(0)), client2)
+    Speak("API_ADDRESS_NEW", Transaction("coinbase", Naslovi, ammount, str(0)), client2)
     return
 
 def GenerateAddress():
@@ -304,6 +328,7 @@ def GetState():
     senderAddr = str(senderentry.get())
 
     Speak("API_ADDRESS_STATE", Address(senderAddr, 0), client2)
+    time.sleep(1)
     addrState = Recieve(client2, "API_ADDRESS_STATE")
     addrState = addrState[0].amount
     ledger.insert(END, f"State: {addrState}\n\n")
@@ -312,6 +337,10 @@ def GetState():
 def startState():
     ts = threading.Thread(target=GetState)
     ts.start()
+    return
+
+def startMining():
+    Speak("API_MINE", None, client2)
     return
 
 
@@ -351,8 +380,14 @@ def CurrentUser2():
 def DeleteCurrent():
     global CURRENTUSER
     CURRENTUSER=None
-    return  
+    return
 
+def CloseConnection():
+    client2.close()
+
+
+user1button= Button(root, text="Close Connection", command=CloseConnection, width=15)
+user1button.grid(row=6, column=6)
 user1button= Button(root, text="User1", command=CurrentUser1, width=10)
 user1button.grid(row=0, column=2)
 user2button= Button(root, text="User2", command=CurrentUser2, width=10)
@@ -361,6 +396,8 @@ user2button.grid(row=0, column=3)
 deleteUser= Button(root, text="DeleteCurrent", command=DeleteCurrent, width=10)
 deleteUser.grid(row=0, column=4)
 
+returnState = Button(root, text="Start Mining", command=startMining, width=15)
+returnState.grid(row=6, column=5)
 
 
 

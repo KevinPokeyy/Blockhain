@@ -117,12 +117,11 @@ def GetState(name):
 def CheckMempool():
     for t in mempool:
         for b in blockchain:
-            if t.sender != "coinbase":
-                if t.signature in b.data:
-                    try:
-                        mempool.remove(t)
-                    except:
-                        pass
+            if t.signature in b.data:
+                try:
+                    mempool.remove(t)
+                except:
+                    pass
 
 #fpogovor z strežnikom
 def Speak(option, what, client):
@@ -324,98 +323,104 @@ def Mine():
 def HandleClient(client, address):
     global blockchain, diff, mempoolBlock, mempool, clients, port
     while True:
-        msg = client.recv(512).decode("utf-8")
-        if msg == "NODE":
-            if not client in clients:
-                clients.append(client)
-            imposter = Recieve(client, "NODE")
-            if CmpChains(imposter):
-                CheckMempool()
-                blockchain = imposter.copy()
-                diff = blockchain[len(blockchain) - 1].diff
-                imposter.clear()
-                ledger.delete('1.0', END)
-                for a in blockchain:
-                    ledger.insert(END, f"\nIndex: {a.index}\ndiff: {a.diff}\nData: {a.data}\nHash: {a.hash}\nTimestamp: {a.time}\nNonce: {a.nonce}\nPrevHash: {a.previousHash}\n")
-                    ledger.see(END)
-            else:
-                imposter.clear()
+        try:
+            msg = client.recv(512).decode("utf-8")
+            if msg == "NODE":
+                if not client in clients:
+                    clients.append(client)
+                imposter = Recieve(client, "NODE")
+                if CmpChains(imposter):
+                    CheckMempool()
+                    blockchain = imposter.copy()
+                    diff = blockchain[len(blockchain) - 1].diff
+                    imposter.clear()
+                    ledger.delete('1.0', END)
+                    for a in blockchain:
+                        ledger.insert(END, f"\nIndex: {a.index}\ndiff: {a.diff}\nData: {a.data}\nHash: {a.hash}\nTimestamp: {a.time}\nNonce: {a.nonce}\nPrevHash: {a.previousHash}\n")
+                        ledger.see(END)
+                else:
+                    imposter.clear()
 
-        #širjenje mempool po omrežju
-        elif msg == "MEMPOOL_EXPAND":
-            CheckMempool()
-            imposterMem = Recieve(client, "MEMPOOL_EXPAND")
-            print(len(imposterMem))
-            print(imposterMem)
-            for i in imposterMem:
-                inBlockchain = False
-                for b in blockchain:
-                    if i.sender != "coinbase":
+            #širjenje mempool po omrežju
+            elif msg == "MEMPOOL_EXPAND":
+                CheckMempool()
+                imposterMem = Recieve(client, "MEMPOOL_EXPAND")
+                print(len(imposterMem))
+                print(imposterMem)
+                for i in imposterMem:
+                    inBlockchain = False
+                    for b in blockchain:
                         if i.signature in b.data:
                             inBlockchain = True
-                if not inBlockchain:
-                    inMempool = 0
-                    for t in mempool:
-                        if t.signature == i.signature:
-                            inMempool = inMempool + 1
-                    if inMempool <= 0:
-                        mempool.append(i)
-                    elif inMempool > 1:
-                        mempool.remove(i)
+                    if not inBlockchain:
+                        inMempool = 0
+                        for t in mempool:
+                            if t.signature == i.signature:
+                                inMempool = inMempool + 1
+                        if inMempool <= 0:
+                            mempool.append(i)
+                        elif inMempool > 1:
+                            mempool.remove(i)
 
 
 
 
-        #pridobitev zadnjega bloka
-        elif msg == "API_LAST":
-            tmp = blockchain[len(blockchain) - 1]
-            Speak("NODE_LAST", tmp, client)
+            #pridobitev zadnjega bloka
+            elif msg == "API_LAST":
+                tmp = blockchain[len(blockchain) - 1]
+                Speak("NODE_LAST", tmp, client)
 
 
-        #pridobitev cele verige
-        elif msg == "API_CHAIN":
-            Speak("NODE", blockchain, client)
+            #pridobitev cele verige
+            elif msg == "API_CHAIN":
+                Speak("NODE", blockchain, client)
 
 
-        #Ustvarjanje zahteve novega bloka
-        elif msg == "API_BLOCK_NEW":
-            all = ""
-            for i in imposter:
-                all = all + i
-            mempoolBlock.append(all)
+            #Ustvarjanje zahteve novega bloka
+            elif msg == "API_BLOCK_NEW":
+                all = ""
+                for i in imposter:
+                    all = all + i
+                mempoolBlock.append(all)
 
-        #ustvarjanje novega naslova z stanjem
-        elif msg == "API_ADDRESS_NEW":
-            newAddr = Recieve(client, "API_ADDRESS_NEW")
-            print("heard2")
-            mempool.append(newAddr[0])
+            #ustvarjanje novega naslova z stanjem
+            elif msg == "API_ADDRESS_NEW":
+                newAddr = Recieve(client, "API_ADDRESS_NEW")
+                print("heard2")
+                mempool.append(newAddr[0])
 
-            print(len(mempool))
-
-
-        #ustvarjnanje transakcije
-        elif msg == "API_ADDRESS_SEND":
-            tran = Recieve(client, "API_ADDRESS_SEND")
-            mempool.append(tran[0])
-            for c in clients:
-                try:
-                    Speak("MEMPOOL_EXPAND", mempool, c)
-                except:
-                    pass
-            print(len(mempool))
-
-        elif msg == "API_ADDRESS_STATE":
-            addr = Recieve(client, "API_ADDRESS_STATE")
-            addr[0].amount = GetState(addr[0].name)
-            time.sleep(0.3)
-            Speak("API_ADDRESS_STATE", addr[0], client)
+                print(len(mempool))
 
 
-        elif msg == "CONNECT_WITH_ME":
-            msg = ""
-            stor = Recieve(client, "CONNECT_WITH_ME")
-            tc = threading.Thread(target=AutomaticClient, args=(int(stor[0]),))
-            tc.start()
+            #ustvarjnanje transakcije
+            elif msg == "API_ADDRESS_SEND":
+                tran = Recieve(client, "API_ADDRESS_SEND")
+                mempool.append(tran[0])
+                for c in clients:
+                    try:
+                        Speak("MEMPOOL_EXPAND", mempool, c)
+                    except:
+                        pass
+                print(len(mempool))
+
+            elif msg == "API_ADDRESS_STATE":
+                addr = Recieve(client, "API_ADDRESS_STATE")
+                addr[0].amount = GetState(addr[0].name)
+                Speak("API_ADDRESS_STATE", addr[0], client)
+
+
+            elif msg == "CONNECT_WITH_ME":
+                msg = ""
+                stor = Recieve(client, "CONNECT_WITH_ME")
+                tc = threading.Thread(target=AutomaticClient, args=(int(stor[0]),))
+                tc.start()
+
+            elif msg == "API_MINE":
+                client.send("E".encode("utf-8"))
+                StartMining()
+        except:
+            client.close()
+            return
 
 
 
@@ -498,6 +503,7 @@ def AutomaticClient(port):
         try:
             if not ogBLockchainSize == len(blockchain):
                 Speak("NODE", blockchain, client2)
+                CheckMempool()
                 ogBLockchainSize = len(blockchain)
             if not ogMempoolSize == len(mempool):
                 Speak("MEMPOOL_EXPAND", mempool, client2)
