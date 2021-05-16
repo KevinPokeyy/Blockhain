@@ -1,0 +1,65 @@
+item shop
+money transactions
+item transactions
+collecting money/items?*
+skill tree?*
+
+BNF
+
+S:P(I)->SP
+P= player /null
+I= item / money /null
+S= shop /null
+
+
+
+
+
+
+transakcije
+
+
+function buy_item(player, money, item){
+
+  if(money>player.money){
+    return false
+  }
+  else{
+    player.money.remove(money)
+    player.items.add(item)
+  }
+
+} 
+
+function  sell_item(player, item){
+
+  player.items.remove(item)
+  player.money.add()
+
+} 
+
+function  transfer_money(player1, player2, money){
+
+  if(money>player1.money){
+    return false
+  }
+  else{
+    player1.money.remove()
+    player2.money.add()
+  }
+
+
+} 
+function  transfer_items(player1, player2, item){
+
+  if(player1.items(item).find==false){
+    return false
+  }
+  else{
+    player1.items.remove(item)
+    player2.items.add(item)
+  }
+
+
+} 
+    
