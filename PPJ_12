@@ -6,10 +6,18 @@ skill tree?*
 
 BNF
 
+(Tadej verzija)
 S:P(I)->SP
 P= player /null
 I= item / money /null
 S= shop /null
+
+(Kevin verzija)
+S := POGODBA PLAYERS
+PLAYERS := PLAYER PLAYERS | PLAYER
+PLAYER := PLAYER.ime ITEMS | PLAYER.ime
+ITEMS := float | ITEM.id
+POGODBA := buy_item | sell_item | transfer_money | transfer_item
 
 
 
