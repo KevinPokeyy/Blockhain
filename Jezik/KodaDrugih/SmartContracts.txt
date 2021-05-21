@@ -1,0 +1,87 @@
+Call:
+  money_transaction(Ivana, Vanja, 100);
+  shop_model(Ivana, terminator)
+  shop_mask(Ivana, leopard_mask)
+  shop_power(Ivana, speed_running)
+  buy_life(Ivana)
+
+Deff:
+//funkcija money_transaction -> prenos denarja od igralca1 (fromPlayer1) do igralca2 (toPlayer2)
+
+  SMARTCONTRACT money_transaction ($fromPlayer1, $toPlayer2, $money){
+
+    SETRESULT(FALSE)
+
+    //če igralec 1, ki prenaša denar, ima več denarja na računu kot želi prenesti
+    //potem se lahko dovoli transakcija, igralcu 1 ki prenaša denar, se zmanjša stanje
+    //denarja na računu, igralcu 2 se poveča stanje. In funkcija vrne TRUE če je
+    //transakcija uspešna, drugače pa ostane FALSE
+    //SETRESULT(TRUE) pomeni da je transakcija uspešno obdelovana
+
+    IF(GETMONEY($fromPlayer1) > $money){
+      SETMONEY($fromPlayer1, GETMONEY($fromPlayer1) - $money)
+      SETMONEY($toPlayer2, GETMONEY($toPlayer2) + $money)
+      SETRESULT(TRUE);
+      }
+    }
+
+//funkcija shop_model -> igralec lahko kupi poljubni model v seznamu in ga doda v svoj seznam modelov
+
+    SMARTCONTRACT shop_model($player, $model){
+
+      SETRESULT(FALSE)
+
+      //če igralec ima več denarja kot je cena modela potem se lahko izvede
+      //kupovina, igralcu se zmanjša stanje denarja na računu, in pridobi poljubni model
+      //oziroma, doda ga v seznam modelov
+
+      IF(GETMONEY($player) > GETMONEY($model)){
+        SETMONEY($player, GETMONEY($player) - GETPRICE($model))
+        ADDMODEL($player, $model)
+        SETRESULT(TRUE)
+      }
+    }
+
+//funkcija shop_mask -> igralec lahko kupi poljubno masko iz seznama in je doda v svoj seznam maske
+
+    SMARTCONTRACT shop_mask($player, $mask){
+      SETRESULT(FALSE)
+
+      //če igralec ima več denarja kot je cena maske potem se lahko izvede
+      //kupovina, igralcu se zmanjša stanje denarja na računu, in pridobi poljubnu masku za modela
+      //oziroma, doda je v seznam mask
+
+      IF(GETMONEY($player) > GETMONEY($mask)){
+        SETMONEY($player, GETMONEY($player) - GETPRICE($mask))
+        ADDMASK($player, $mask)
+        SETRESULT(TRUE)
+      }
+    }
+
+//funkcija shop_power -> igralec lahko kupi določen power (telepathy, super speed ...)
+
+    SMARTCONTRACT shop_power($player, $power){
+      SETRESULT(FALSE)
+
+      //če igralec ima več denarja kot je cena power-a potem se lahko izvede
+      //kupovina, igralcu se zmanjša stanje denarja na računu, in pridobi poljubni power za modela
+      // oziroma, doda ga v seznam powers
+
+      IF(GETMONEY($player) > GETMONEY($power)){
+        SETMONEY($player, GETMONEY($player) - GETPRICE($power))
+        ADDPOWER($player, $power)
+        SETRESULT(TRUE)
+      }
+    }
+
+//buy_life -> če igralec zgubi življenje, potem dobi možnost da kupi še en life po določeni ceni in potem nadaljuje z igro
+
+    SMARTCONTRACT buy_life($player){
+      SETRESULT(FALSE)
+
+      IF(GETMONEY($player) > GETPRICE($life)){
+        SETLIFE($player, GETLIFES($player) + 1)
+        SETMONEY($player, GETMONEY($player) - GETPRICE($life))
+        SETRESULT(TRUE);
+      }
+    }

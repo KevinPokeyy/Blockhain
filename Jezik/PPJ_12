@@ -1,0 +1,95 @@
+ZAGOVOR PROJEKTA: 7.6.2021
+
+
+item shop
+money transactions
+item transactions
+collecting money/items?*
+skill tree?*
+
+BNF
+
+(Tadej verzija)
+S:P(I)->SP
+P= player /null
+I= item / money /null
+S= shop /null
+
+(Kevin verzija)
+S ::= POGODBA PLAYERS
+PLAYERS ::= PLAYER PLAYERS | PLAYER
+PLAYER ::= PLAYER.ime ITEMS | PLAYER.ime
+ITEMS ::= ITEM ITEMS | ITEM
+ITEM ::= float | ITEM.name
+POGODBA ::= buy_item | sell_item | transfer_money | transfer_item
+
+
+
+
+
+
+Pametne pogodbe
+
+
+#Pogodba za obravnavo kupovanja izdelkov/stvari iz trgovine v igri. Igralec bo iz seznama izbral stvar, katero želi kupiti
+in iz svoje denarnice plačal s denarjem. Pogodba se izvede samo če ima igralec dovolj denarja v svoji denarnici.
+
+function buy_item(player, money, item){
+
+  if(money>player.money){
+    return false
+  }
+  else{
+    player.money.remove(money)
+    player.items.add(item)
+  }
+
+} 
+
+#Pogodba za obravnavo prodaje izdelkov/stvari trgovini ali trgovcu v igri. Igralec bo iz svojega seznama izdelkov izbral stvar, katero
+želi prodati, in jo po vnaprej določeni ceni proda. Pogodba se izvede samo če ima igralec izdelek v svoji inventuri.
+
+function  sell_item(player, item){
+
+  if(player.items.finditem(item)==true){
+    player.items.remove(item)
+    player.money.add()
+
+  }
+  else{
+    return false
+  }
+
+
+
+} 
+
+#Pogodba za prenosa denarja med igralci. Pogodba se izvede samo če ima igralec1 dovolj denarja v svoji denarnici.
+
+function  transfer_money(player1, player2, money){
+
+  if(money>player1.money){
+    return false
+  }
+  else{
+    player1.money.remove()
+    player2.money.add()
+  }
+
+
+} 
+
+#Pogodba za prenosa stvari/izdelkov med igralci. Pogodba se izvede samo če ima igralec1 stvar/izdelek v svoji inventuri.
+
+function  transfer_items(player1, player2, item){
+
+  if(player1.finditem(item)==false){
+    return false
+  }
+  else{
+    player1.items.remove(item)
+    player2.items.add(item)
+  }
+
+
+} 

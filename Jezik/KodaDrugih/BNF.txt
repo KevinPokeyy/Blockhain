@@ -1,0 +1,50 @@
+//Data types----------------------------------------------------
+  - integer: [0-9]+
+  - operator: + | * | - | /
+  - bool: TRUE | FALSE
+  - result: SETRESULT(#bool)
+  - separator ( | ) | { | }
+  - variable: [a-z]+[0-9]*
+  - string: [a-z]+
+
+//------------------GRAMATIKA-------------------------------
+
+//u parseru za komentar dodati da ignorise "//", da kad ucita "//" predje na sledeci red
+
+PROGRAM ::= F | F PROGRAM | Epsilon
+
+F ::= SMARTCONTRACT #string ( ARGS ){ BODY }
+
+ARGS ::= #variable #variable #integer |
+         #variable #variable |
+         #variable
+
+BODY ::= #result  I | Epsilon
+
+GETTER ::= GETMONEY(#variable) |
+           GETLIFES(#variable) |
+           GETPRICE(#variable)
+
+SETTER ::= SETMONEY(#variable, EXPR) |
+           SETLIFE(#variable, EXPR)
+
+EXPR ::= GETTER - #variable |
+         GETTER - GETTER |
+         GETTER + #integer |
+         GETTER + #variable
+
+ADD ::= ADDMODEL(#variable, #variable) |
+        ADDMASK(#variable, #variable) |
+        ADDPOWER(#variable, #variable)
+
+I ::= IF( GETTER K) { B }
+
+K ::= > #variable |
+      < #variable |
+      > GETTER |
+      < GETTER
+
+B ::= SETTER B |
+      ADD B |
+      #result |
+      Epsilon
