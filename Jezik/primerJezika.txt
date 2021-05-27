@@ -1,0 +1,6 @@
+for (kevin != andreja (kevin = kevin + 1)) {
+	if (andreja < 10) {
+		andreja = kevin + 2 - 2222
+	}
+	kevin = 1
+}
