@@ -9,11 +9,40 @@ skill tree?*
 
 BNF
 
-(Tadej verzija)
-S:P(I)->SP
-P= player /null
-I= item / money /null
-S= shop /null
+//Data types----------------------------------------------------
+  - integer: [0-9]+
+  - operator: + | * | - | /
+  - bool: TRUE | FALSE
+  - result: SETRESULT(#bool)
+  - separator ( | ) | { | }
+  - variable: [a-z]+[0-9]*
+  - string: [a-z]+
+
+//------------------GRAMATIKA-------------------------------
+(Test)
+
+S ::= P | P S | Epsilon
+P ::= POGODBA(PLAYERS, ITEMS){BODY}
+
+POGODBA ::= buy_item | sell_item | transfer_money | transfer_item
+
+PLAYERS ::= PLAYER | PLAYER PLAYER
+PLAYER ::= PLAYER.ime
+
+ITEMS ::= ITEM | ITEM ITEM
+ITEM ::= MONEY(int)| ITEM.name
+
+BODY ::= IF {return false} else {EXPR return true}
+IF ::= if (money()int > player.findmoney()) | if( player.finditem()==false)
+
+EXPR ::= REMOVE ADD  
+
+REMOVE ::= player.money.remove(money) | player.items.remove(item)
+ADD  ::= player.money.add() | player2.items.add(item)
+
+
+
+
 
 (Kevin verzija)
 S ::= POGODBA PLAYERS
@@ -42,6 +71,7 @@ function buy_item(player, money, item){
   else{
     player.money.remove(money)
     player.items.add(item)
+    return true
   }
 
 } 
@@ -51,13 +81,14 @@ function buy_item(player, money, item){
 
 function  sell_item(player, item){
 
-  if(player.items.finditem(item)==true){
-    player.items.remove(item)
-    player.money.add()
+  if(player.items.finditem(item)==false){
+    return false
 
   }
   else{
-    return false
+    player.items.remove(item)
+    player.money.add()
+    return true
   }
 
 
@@ -74,6 +105,7 @@ function  transfer_money(player1, player2, money){
   else{
     player1.money.remove()
     player2.money.add()
+    return true
   }
 
 
@@ -89,6 +121,7 @@ function  transfer_items(player1, player2, item){
   else{
     player1.items.remove(item)
     player2.items.add(item)
+    return true
   }
 
 
