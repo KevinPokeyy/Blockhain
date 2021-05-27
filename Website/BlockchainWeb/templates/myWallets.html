@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<p>{{ state }}</p>
+
+<form action="/myWallets/" method="post">
+    <div class="mb-3">
+    <label for="nodePort" class="form-label">Node Port</label>
+    <input type="text" class="form-control" id="nodePort" name="nodePort" aria-describedby="nodePortHelp">
+    <div id="nodePortHelp" class="form-text">Enter the port of the node you would like to send this request to.</div>
+  </div>
+
+    <div class="mb-3">
+    <label for="addr" class="form-label">Wallet Address</label>
+    <input type="text" class="form-control" id="addr" name="addr" aria-describedby="addrHelp">
+    <div id="addrHelp" class="form-text">Enter the wallet address.</div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">GetState</button>
+</form>
+
+{% endblock %}
