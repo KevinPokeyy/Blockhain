@@ -1,0 +1,15 @@
+PROGRAM := BODY
+BODY := variable = OPERATIONS BODY | for RESERVED_FOR BODY | if RESERVED_IF BODY | BLOCKCHAIN BODY | epsilon
+
+OPERATIONS := OPERATOR operator OPERATIONS | OPERATOR
+OPERATOR := number | variable
+
+CONDITION := OPERATIONS checker OPERATIONS
+
+
+RESERVED_FOR := FOR_CONDITION seperator({) BODY seperator({)
+FOR_CONDITION := seperator(() CONDITION seperator(() OPERATIONS seperator()) seperator())
+
+RESERVED_IF := seperator(() CONDITION seperator()) seperator({) BODY seperator(})
+
+
