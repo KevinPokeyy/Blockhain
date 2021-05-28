@@ -1,9 +1,8 @@
-import creators.Variable
+
 
 /*
     procedure PROGRAM
         call BODY
-
     procedure BODY
         if token = for then NextToken
             call RESERVED_FOR
@@ -19,31 +18,25 @@ import creators.Variable
         else if token = action then NextToken
             call ACTION
             call BODY
-
     procedure OPERATIONS
         call OPERATOR
             if token = operator then NextToken
                 call OPERATIONS
             else error
-
    procedure OPERATOR
         if token = number then NextToken
         else if token = variable then NextToken
         else error
-
    procedure CONDITION
         call OPERATIONS
         if token = checker then NextToken
             call OPERATIONS
-
    procedure RESERVED_IF
         call CONDITION
         call BODY
-
    procedure RESERVED_FOR
         call FOR_CONDITION
         call BODY
-
    procedure FOR_CONDITION
         if token = '(' then NextToken
             call CONDITION
@@ -51,7 +44,6 @@ import creators.Variable
             if token = ') then NextToken
             else error
         else error
-
    procedure ACTION
         if token = "BuyItem" then NextToken
             if token = ( then NextToken
@@ -78,7 +70,6 @@ import creators.Variable
                 else error
             else error
         else error
-
    procedure BUY_ITEM_ARGS
         if token = variable then NextToken
             if token = , then NextToken
@@ -89,7 +80,6 @@ import creators.Variable
                 else error
             else error
         else error
-
    procedure SELL_ITEM_ARGS
         if token = variable then NextToken
             if token = , then NextToken
@@ -97,7 +87,6 @@ import creators.Variable
                 else error
             else error
         else error
-
    procedure TRANSFER_MONEY_ARGS
         if token = variable then NextToken
             if token = , then NextToken
@@ -108,7 +97,6 @@ import creators.Variable
                 else error
             else error
         else error
-
    procedure TRANSFER_ITEM_ARGS
         if token = variable then NextToken
             if token = , then NextToken
@@ -120,7 +108,6 @@ import creators.Variable
                 else error
             else error
         else error
-
  */
 
 class Analizer(var tokens: ArrayList<Token>){
@@ -128,6 +115,7 @@ class Analizer(var tokens: ArrayList<Token>){
     var index = 0;
     var ok = true
     var variables: ArrayList<Variable> = arrayListOf<Variable>()
+    var SellItem_actions: ArrayList<SellItem> = arrayListOf<SellItem>()
 
 
     fun getVariableValue(name: String) : Double?{
@@ -407,9 +395,15 @@ class Analizer(var tokens: ArrayList<Token>){
             index++
             if(tokens[index].lexem == "("){
                 index++
-                SELL_ITEM_ARGS()
+                /////////////////////////////
+                var list=SELL_ITEM_ARGS()
                 if(tokens[index].lexem == ")"){
                     index++
+                    /////////////////////////// ustvaris nov objekt SellItem in ga das v seznam vseh
+                    var action_sellitem=SellItem("SellItem",list[0],list[1])
+                    SellItem_actions.add(action_sellitem)
+
+
                 }
                 else{
                     if(tokens[index].symbol != "END") {
@@ -508,14 +502,26 @@ class Analizer(var tokens: ArrayList<Token>){
             }
         }
     }
-
-    fun SELL_ITEM_ARGS() {
+    ///////////////// returnas list
+    fun SELL_ITEM_ARGS(): MutableList<Variable> {
+        var list: MutableList<Variable> = mutableListOf<Variable>();
         if (tokens[index].symbol == "variable") {
+            ///////////////////////////////// shranis variable za playera
+            var player=Variable("Player",tokens[index].lexem)
             index++
             if (tokens[index].lexem == ",") {
                 index++
                 if (tokens[index].symbol == "variable") {
+                    //////////////////////////////// shranis variable za item
+                    var item=Variable("Item",tokens[index].lexem)
                     index++
+                    //////////////////////////////// das oboje v seznam
+
+                    list.add(player)
+                    list.add(item)
+
+                    return list
+
                 } else {
                     if (tokens[index].symbol != "END") {
                         ok = false
@@ -531,6 +537,7 @@ class Analizer(var tokens: ArrayList<Token>){
                 ok = false
             }
         }
+        return list
     }
 
     fun TRANSFER_MONEY_ARGS(){
