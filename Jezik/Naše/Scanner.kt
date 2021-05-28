@@ -1,28 +1,18 @@
-
 import java.io.File
-
-class Token(val lexem: String, val symbol: String) {
-
-    fun printToken(){
-        print("lexem: $lexem, symbol: $symbol\n")
-
-    }
-
-}
 
 class Scanner {
 
-    var table = Array(17) { IntArray(256) }
+    var table = Array(22) { IntArray(256) }
     var symbol = arrayListOf<String>("error", "whitespace", "variable", "variable", "reserved", "variable", "variable", "reserved",
         "number", "error", "number", "operator", "operator", "checker", "error", "seperator",
-        "variable")
+        "variable", "error", "error", "error", "error", "action")
 
     var tokens = arrayListOf<Token>()
     var everything = ""
 
     init {
 
-        for (i in 0..16) {
+        for (i in 0..21) {
             for (j in 0..255) {
                 table[i][j] = 0
             }
@@ -47,6 +37,9 @@ class Scanner {
         table[0]['}'.toInt()] = 15;
         table[0][']'.toInt()] = 15;
         table[0]['['.toInt()] = 15;
+        table[0][','.toInt()] = 15
+        table[0][34] = 15
+
 
         //whitespace
         table[0][9] = 1;
@@ -73,6 +66,14 @@ class Scanner {
             //if
             table[3][i] = 2
             table[4][i] = 2
+            //action
+            table[16][i] = 2
+            table[17][i] = 2
+            table[18][i] = 2
+            table[19][i] = 2
+            table[20][i] = 2
+            table[21][i] = 2
+
         }
 
         //reserved for
@@ -99,6 +100,13 @@ class Scanner {
         table[0]['<'.toInt()] = 13
         table[0]['>'.toInt()] = 13
 
+        //action
+        table[0]['a'.toInt()] = 16
+        table[16]['c'.toInt()] = 17
+        table[17]['t'.toInt()] = 18
+        table[18]['i'.toInt()] = 19
+        table[19]['o'.toInt()] = 20
+        table[20]['n'.toInt()] = 21
 
     }
 

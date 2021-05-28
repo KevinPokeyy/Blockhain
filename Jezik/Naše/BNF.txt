@@ -1,15 +1,23 @@
-PROGRAM := BODY
-BODY := variable = OPERATIONS BODY | for RESERVED_FOR BODY | if RESERVED_IF BODY | BLOCKCHAIN BODY | epsilon
+PROGRAM := seperator({) BODY seperator(})
+BODY := variable = OPERATIONS BODY | for RESERVED_FOR BODY | if RESERVED_IF BODY | action ACTION BODY | epsilon
 
-OPERATIONS := OPERATOR operator OPERATIONS | OPERATOR
+OPERATIONS := OPERATOR operator OPERATIONS | OPERATOR | "string"
 OPERATOR := number | variable
 
 CONDITION := OPERATIONS checker OPERATIONS
 
 
 RESERVED_FOR := FOR_CONDITION seperator({) BODY seperator({)
-FOR_CONDITION := seperator(() CONDITION seperator(() OPERATIONS seperator()) seperator())
+FOR_CONDITION := seperator(() CONDITION seperator(() variable = OPERATIONS seperator()) seperator())
 
 RESERVED_IF := seperator(() CONDITION seperator()) seperator({) BODY seperator(})
+
+ACTION := BuyItem seperator(() BUY_ITEM_ARGS seperator()) | SellItem seperator(() SELL_ITEM_ARGS seperator()) |
+            TransferMoney seperator(() TRANSFER_MONEY_ARGS seperator()) | TransferItem seperator(() TRANSFER_ITEM_ARGS seperator())
+
+BUT_ITEM_ARGS := variable seperator(,) OPERATOR seperator(,) variable
+SELL_ITEM_ARGS := variable seperator(,) variable
+TRANSFER_MONEY_ARGS := variable seperator(,) variable seperator(,) OPERATOR
+TRANSFER_ITEM_ARGS := variable seperator(,) variable seperator(,) variable
 
 
