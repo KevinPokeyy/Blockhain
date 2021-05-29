@@ -445,9 +445,11 @@ class Analizer(var tokens: ArrayList<Token>){
             index++
             if(tokens[index].lexem == "("){
                 index++
-                TRANSFER_MONEY_ARGS()
+                var list = TRANSFER_ITEM_ARGS()
                 if(tokens[index].lexem == ")"){
                     index++
+                    var action_transfermoney("TransferMoney", list[0], list[1], list[2])
+                    actions.TransferMoney.add(action_transfermoney)
                 }
                 else{
                     if(tokens[index].symbol != "END") {
@@ -466,9 +468,11 @@ class Analizer(var tokens: ArrayList<Token>){
             index++
             if(tokens[index].lexem == "("){
                 index++
-                TRANSFER_ITEM_ARGS()
+                var list=TRANSFER_ITEM_ARGS()
                 if(tokens[index].lexem == ")"){
                     index++
+                    var action_transferitem("TransferItem", list[0], list[1], list[2])
+                    actions.TransferItem.add(action_transferitem)
                 }
                 else{
                     if(tokens[index].symbol != "END") {
@@ -572,16 +576,25 @@ class Analizer(var tokens: ArrayList<Token>){
         return list
     }
 
-    fun TRANSFER_MONEY_ARGS(){
+    fun TRANSFER_MONEY_ARGS: MutableList<Variable>(){
+        var list: MutableList<Variable> = mutableListOf<Variable>();
         if(tokens[index].symbol == "variable"){
+            var player1 = Variable("PlayerSender",tokens[index].lexem)
             index++
             if (tokens[index].lexem == ","){
                 index++
                 if (tokens[index].symbol == "variable"){
+                    var player2 = Variable("PlayerReceiver", tokens[index].lexem)
                     index++
                     if(tokens[index].lexem == ","){
                         index++
-                        OPERATOR()
+                        var money = Variable("Money", OPERATOR())
+
+                        list.add(player1)
+                        list.add(player2)
+                        list.add(money)
+
+                        return list
                     }
                     else{
                         if(tokens[index].symbol != "END") {
@@ -608,17 +621,27 @@ class Analizer(var tokens: ArrayList<Token>){
         }
     }
 
-    fun TRANSFER_ITEM_ARGS(){
+    fun TRANSFER_ITEM_ARGS(): MutableList<Variable>{
+        var list = MutableList<Variable> = mutableListOf<Variable>();
         if(tokens[index].symbol == "variable"){
+            var player1 = Variable("PlayerSender", tokens[index].lexem)
             index++
             if (tokens[index].lexem == ","){
                 index++
                 if (tokens[index].symbol == "variable"){
+                    var player2 = Variable("PlayerReceiver", tokens[index].lexem)
                     index++
                     if(tokens[index].lexem == ","){
                         index++
                         if(tokens[index].symbol == "variable"){
+                            var item = Variable("Item", tokens[index].lexem)
                             index++
+
+                            list.add(player1)
+                            list.add(player2)
+                            list.add(item)
+
+                            return list
                         }
                         else{
                             if(tokens[index].symbol != "END") {
@@ -650,5 +673,4 @@ class Analizer(var tokens: ArrayList<Token>){
             }
         }
     }
-
 }
