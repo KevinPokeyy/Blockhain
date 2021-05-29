@@ -448,7 +448,7 @@ class Analizer(var tokens: ArrayList<Token>){
                 var list = TRANSFER_ITEM_ARGS()
                 if(tokens[index].lexem == ")"){
                     index++
-                    var action_transfermoney("TransferMoney", list[0], list[1], list[2])
+                    var action_transfermoney=TransferMoney("TransferMoney", list[0], list[1], list[2])
                     actions.TransferMoney.add(action_transfermoney)
                 }
                 else{
@@ -471,7 +471,7 @@ class Analizer(var tokens: ArrayList<Token>){
                 var list=TRANSFER_ITEM_ARGS()
                 if(tokens[index].lexem == ")"){
                     index++
-                    var action_transferitem("TransferItem", list[0], list[1], list[2])
+                    var action_transferitem=TransferItem("TransferItem", list[0], list[1], list[2])
                     actions.TransferItem.add(action_transferitem)
                 }
                 else{
@@ -576,7 +576,7 @@ class Analizer(var tokens: ArrayList<Token>){
         return list
     }
 
-    fun TRANSFER_MONEY_ARGS: MutableList<Variable>(){
+    fun TRANSFER_MONEY_ARGS(): MutableList<Variable>{
         var list: MutableList<Variable> = mutableListOf<Variable>();
         if(tokens[index].symbol == "variable"){
             var player1 = Variable("PlayerSender",tokens[index].lexem)
@@ -594,7 +594,7 @@ class Analizer(var tokens: ArrayList<Token>){
                         list.add(player2)
                         list.add(money)
 
-                        return list
+
                     }
                     else{
                         if(tokens[index].symbol != "END") {
@@ -619,10 +619,11 @@ class Analizer(var tokens: ArrayList<Token>){
                 ok = false
             }
         }
+        return list
     }
 
     fun TRANSFER_ITEM_ARGS(): MutableList<Variable>{
-        var list = MutableList<Variable> = mutableListOf<Variable>();
+        var list: MutableList<Variable> = mutableListOf<Variable>();
         if(tokens[index].symbol == "variable"){
             var player1 = Variable("PlayerSender", tokens[index].lexem)
             index++
@@ -641,7 +642,7 @@ class Analizer(var tokens: ArrayList<Token>){
                             list.add(player2)
                             list.add(item)
 
-                            return list
+
                         }
                         else{
                             if(tokens[index].symbol != "END") {
@@ -672,5 +673,6 @@ class Analizer(var tokens: ArrayList<Token>){
                 ok = false
             }
         }
+        return list
     }
 }
