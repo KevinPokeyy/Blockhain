@@ -1,4 +1,2 @@
-package creators
-
-class Contract (val variables: ArrayList<Variable>) {
+class Contract (val body:Body) {
 }
