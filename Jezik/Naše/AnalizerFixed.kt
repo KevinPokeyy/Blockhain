@@ -158,8 +158,10 @@ class Analizer(var tokens: ArrayList<Token>){
         if(ok){
             println("CODE IS VALID")
             println()
-            for(i in  contract!!.body.variables){
-                println("NAME: ${i.name}, VALUE: ${i.value}")
+            for(i in  contract!!.body.action){
+                for(j in i.BuyItems){
+                    println("Player: ${j.player.value}, Item: ${j.item.value}")
+                }
             }
             return contract
 
@@ -238,11 +240,28 @@ class Analizer(var tokens: ArrayList<Token>){
         }
         var value = OPERATOR()
         if(tokens[index].symbol == "operator"){
+            val operator=tokens[index].lexem
 
             index++
             var operationsValue = OPERATIONS()
             if (operationsValue is Number){
-                return value + operationsValue.toDouble()
+                if(operator=="+"){
+                    return value + operationsValue.toDouble()
+                }
+                else if(operator=="-") {
+                    return value - operationsValue.toDouble()
+                }
+                else if(operator=="/") {
+                    return value / operationsValue.toDouble()
+                }
+                else if(operator=="*") {
+                    return value * operationsValue.toDouble()
+                }
+                else{
+                    ok = false
+
+                }
+
             }
         }
         return value
