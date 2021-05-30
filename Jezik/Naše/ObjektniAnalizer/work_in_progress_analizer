@@ -134,11 +134,13 @@ class Analizer(var tokens: ArrayList<Token>){
     fun PROGRAM(){
         tokens.add(Token("END", "END"))
         ok = true
+        var contract: Contract? =null
         if(tokens[index].lexem == "{"){
             index++
-            BODY()
+            val body=BODY()
             if(tokens[index].lexem == "}"){
                 index++
+                contract=Contract(body)
             }
             else {
                 if(tokens[index].symbol != "END") {
@@ -154,9 +156,11 @@ class Analizer(var tokens: ArrayList<Token>){
         if(ok){
             println("CODE IS VALID")
             println()
-            for(v in variables){
-                println("NAME: ${v.name}, VALUE: ${v.value}")
+            for(i in  contract!!.body.variables){
+                println("NAME: ${i.name}, VALUE: ${i.value}")
             }
+
+
         }
         else{
             println("INVALID CODE")
@@ -167,13 +171,14 @@ class Analizer(var tokens: ArrayList<Token>){
         val body=Body()
         if (tokens[index].lexem == "for"){
             index++
-            RESERVED_FOR()
+            val for_statement=RESERVED_FOR()
+            body.forstatements.add(for_statement!!)
             BODY()
         }
         else if (tokens[index].lexem == "if"){
             index++
-            val ifstatement=RESERVED_IF()
-            body.ifstatements.add(ifstatement!!)
+            val if_statement=RESERVED_IF()
+            body.ifstatements.add(if_statement!!)
             BODY()
 
         }
@@ -315,13 +320,15 @@ class Analizer(var tokens: ArrayList<Token>){
         return null
     }
 
-    fun RESERVED_FOR(){
-        FOR_CONDITION()
+    fun RESERVED_FOR():For?{
+        val for_condition=FOR_CONDITION()
         if(tokens[index].lexem == "{"){
             index++
-            BODY()
+            val body=BODY()
             if(tokens[index].lexem == "}"){
                 index++
+                val for_statement=For("For",for_condition!!,body)
+                return for_statement
             }
             else{
                 ok = false
@@ -332,23 +339,30 @@ class Analizer(var tokens: ArrayList<Token>){
                 ok = false
             }
         }
+        return null
     }
 
-    fun FOR_CONDITION(){
+    fun FOR_CONDITION(): For_condition?{
+
         if(tokens[index].lexem == "(") {
             index++
-            CONDITION()
+            val condition1=CONDITION()
             if (tokens[index].lexem == "(") {
                 index++
                 if (tokens[index].symbol == "variable") {
+                    val name=tokens[index].lexem
                     index++
                     if(tokens[index].lexem == "=") {
                         index++
-                        OPERATIONS()
+                        val value=OPERATIONS()
+                        val i=Variable(name, value)
+                        variables.add(i)
                         if (tokens[index].lexem == ")") {
                             index++
                             if (tokens[index].lexem == ")") {
                                 index++
+                                val for_condition=For_condition("For",condition1!!,i)
+                                return for_condition
                             } else {
                                 if (tokens[index].symbol != "END") {
                                     ok = false
@@ -384,6 +398,7 @@ class Analizer(var tokens: ArrayList<Token>){
                 ok = false
             }
         }
+        return null
     }
 
     fun ACTION():Action{
