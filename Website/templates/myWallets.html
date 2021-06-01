@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1 class="display-4">Your wallets</h1>
+    <ul class="list-group">
+        {% for w in wallets %}
+            {% if w.state != 0 %}
+                <li class="list-group-item list-group-item-primary">Address: {{w.address}}<br>State: {{w.state}}</li>
+            {% else %}
+                <li class="list-group-item list-group-item-dark">Address: {{w.address}}<br>State: {{w.state}}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+{% endblock %}

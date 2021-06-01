@@ -14,8 +14,8 @@ import binascii
 from User import User
 from flask import Flask, redirect, url_for, render_template, request, jsonify, session
 from flask_mongoengine import MongoEngine
-
-
+from FriendlyTransaction import FriendlyTransaction
+from WalletState import WalletState
 
 mempoolBlock = []
 mempool = []
@@ -31,46 +31,6 @@ CURRENTUSER= None
 global connected, diff
 connected = False
 diff = 5
-
-root = Tk()
-root.title("The \"WANNABE\" websocket API")
-root.resizable(width=False, height=False)
-
-ledger = Text(root)
-ledger.grid(row=1, column=1, rowspan=6,columnspan=4)
-
-entry = Entry(root, width=30)
-entry.grid(row=0, column=1)
-
-# Label
-var = StringVar()
-label = Label(root, textvariable=var, height=2)
-label.grid(row=0, column=5, columnspan=2)
-var.set("Input fields")
-
-# Sender vnos
-senderentry = Entry(root, width=50)
-senderentry.grid(row=1, column=5, columnspan=2)
-
-# Reciever vnos
-recieverentry = Entry(root, width=20,)
-recieverentry.grid(row=2, column=5)
-recieverentryAmount = Entry(root, width=20,)
-recieverentryAmount.grid(row=2, column=6)
-
-recieverentry2 = Entry(root, width=20,)
-recieverentry2.grid(row=3, column=5)
-recieverentryAmount2 = Entry(root, width=20,)
-recieverentryAmount2.grid(row=3, column=6)
-
-recieverentry3 = Entry(root, width=20,)
-recieverentry3.grid(row=4, column=5)
-recieverentryAmount3 = Entry(root, width=20,)
-recieverentryAmount3.grid(row=4, column=6)
-
-# Ammount vnos
-ammountentry = Entry(root, width=50)
-ammountentry.grid(row=5, column=5, columnspan=2)
 
 
 #Serializacija Block classa
@@ -99,6 +59,10 @@ def JsonToTran(jsonStr):
     tran.time = jsonStr["time"]
     return tran
 
+def JsonToFriendlyTran(jsonStr):
+    return FriendlyTransaction(jsonStr["sender"], jsonStr["amountSent"], jsonStr["receiver"])
+
+
 
 def Speak(option, what, client):
     client.send(option.encode("utf-8"))
@@ -115,6 +79,10 @@ def Speak(option, what, client):
         client.recv(256)
     elif option == "API_ADDRESS_STATE":
         tmp = json.dumps(EncodeJsonAddr(what))
+        client.send(tmp.encode("utf-8"))
+        client.recv(256)
+    elif option == "NODES":
+        tmp = str(what)
         client.send(tmp.encode("utf-8"))
         client.recv(256)
     else:
@@ -211,15 +179,19 @@ def ReturnChain():
     return blockchain
 
 
-def ReturnLastBlock():
-    Speak("API_LAST", None, client2)
-    block = Recieve(client2, "API_LAST")
-    ledger.insert(END, f"{json.dumps(EncodeJson(block[0]))}")
-    ledger.insert(END, "\n\n")
-    return
 
 
-def CreateTransaction(receiverAddr, howMuch, owner):
+def CreateTransaction(receiverAddr, howMuch, owner, wallet):
+
+    senderAddr = rsa.PublicKey(int(wallet.privateKeyN), int(wallet.privateKeyE))
+    sender = rsa.PrivateKey(int(wallet.privateKeyN), int(wallet.privateKeyE), int(wallet.privateKeyD), int(wallet.privateKeyP), int(wallet.privateKeyQ))
+
+    #privateKeyN = privkey.n
+    #privateKeyP = privkey.p
+    #privateKeyE = privkey.e
+    #privateKeyD = privkey.d
+    #privateKeyQ = privkey.q
+
     ammount = 0
 
     #if turn == False:
@@ -230,14 +202,12 @@ def CreateTransaction(receiverAddr, howMuch, owner):
     #    sender = USER2
     #else:
     #    senderAddr = str(recieverentry.get())
-    senderAddr = USER1.pubKey
-    sender = USER1
 
     Naslovi = []
     Naslovi.append(Address(str(receiverAddr), float(howMuch)))
     ammount = ammount + float(howMuch)
     a = Transaction(str(senderAddr.n), Naslovi, ammount, hexlify(rsa.sign(
-        (f"{str(senderAddr)}{str(Naslovi)}{str(ammount)}{time}").encode("utf-8"), sender.priKey, "SHA-256")).decode("utf-8"))
+        (f"{str(senderAddr)}{str(Naslovi)}{str(ammount)}{time}").encode("utf-8"), sender, "SHA-256")).decode("utf-8"))
 
     Speak("API_ADDRESS_NEW", a, client2)
 
@@ -249,7 +219,7 @@ def CreateTransaction(receiverAddr, howMuch, owner):
 
     return
 
-def CreateNewAddress(howMuch):
+def CreateNewAddress(howMuch, publicKey):
     global turn, USER1, USER2,CURRENTUSER
     ammount = 0
     #if turn == False:
@@ -264,7 +234,7 @@ def CreateNewAddress(howMuch):
     Naslovi = []
 
 
-    Naslovi.append(Address(str(USER1.pubKey.n), float(howMuch)))
+    Naslovi.append(Address(str(publicKey.n), float(howMuch)))
     ammount = ammount + float(howMuch)
 
     Speak("API_ADDRESS_NEW", Transaction("coinbase", Naslovi, ammount, str(0)), client2)
@@ -283,27 +253,26 @@ def GenerateAddress(howMuch, owner):
     print(f"pubkey = {pubkey}")
 
     # Loads the private key
+    print(type(privkey))
     privkey = rsa.PrivateKey.load_pkcs1(privkey)
 
     #ledger.insert(END, f"{pubkeyOg}\n{privkey}\n\n")
     #ledger.see(END)
 
-    if turn == True:
-        USER1 = User(pubkeyOg, privkey)
-        turn = False
-    else:
-        USER2 = User(pubkeyOg, privkey)
-        turn = True
+    privateKeyN = privkey.n
+    privateKeyP = privkey.p
+    privateKeyE = privkey.e
+    privateKeyD = privkey.d
+    privateKeyQ = privkey.q
+    publicKey = pubkeyOg
 
-    privateKey = privkey
-    publicKey =  pubkeyOg
 
-    print(publicKey)
-
-    wallet = Wallet(privateKey=str(privateKey), publicKey=str(publicKey), humanId=owner)
+    print("MyPrivateKey")
+    wallet = Wallet(privateKeyN=str(privateKeyN), privateKeyP=str(privateKeyP), privateKeyE=str(privateKeyE), privateKeyD=str(privateKeyD),
+                    privateKeyQ=str(privateKeyQ), humanId=owner)
     wallet.save()
 
-    CreateNewAddress(howMuch)
+    CreateNewAddress(howMuch, publicKey)
     #signature = hexlify(rsa.pkcs1.sign(b"kevin", privkey, 'SHA-256'))
     #print(rsa.pkcs1.verify(b"kevin", binascii.unhexlify(signature), pubkeyOg))
     #print('signature = ' + str(signature))
@@ -315,10 +284,9 @@ def GetState(addr):
     senderAddr = addr
 
     Speak("API_ADDRESS_STATE", Address(senderAddr, 0), client2)
-    time.sleep(1)
+    time.sleep(0.03)
     addrState = Recieve(client2, "API_ADDRESS_STATE")
     addrState = addrState[0].amount
-    client2.close()
     return addrState
 
 def startState():
@@ -332,26 +300,6 @@ def startMining():
 
 
 
-clientButton = Button(root, text="Connect", command=StartClient, width=15)
-clientButton.grid(row=0, column=0)
-
-returnChainButton = Button(root, text="Get Blockchain", command=ReturnChain, width=15)
-returnChainButton.grid(row=1, column=0)
-
-returnLastBlockButton = Button(root, text="Last Block", command=ReturnLastBlock, width=15)
-returnLastBlockButton.grid(row=2, column=0)
-
-createNextBlockButton = Button(root, text="Send Transaction", command=CreateTransaction, width=15)
-createNextBlockButton.grid(row=3, column=0)
-
-createNextBlockButton = Button(root, text="Send Address", command=CreateNewAddress, width=15)
-createNextBlockButton.grid(row=4, column=0)
-
-createNextBlockButton = Button(root, text="Generate Address", command=GenerateAddress, width=15)
-createNextBlockButton.grid(row=5, column=0)
-
-returnState = Button(root, text="getState", command=startState, width=15)
-returnState.grid(row=6, column=0)
 
 #User selection
 def CurrentUser1():
@@ -391,13 +339,17 @@ class Human(db.Document):
     password = db.StringField()
 
 class Wallet(db.Document):
-    privateKey = db.StringField()
-    publicKey = db.StringField()
+    privateKeyN = db.StringField()
+    privateKeyP = db.StringField()
+    privateKeyE = db.StringField()
+    privateKeyD = db.StringField()
+    privateKeyQ = db.StringField()
     humanId = db.StringField()
 
 class Transak(db.Document):
     data = db.StringField()
     humanId = db.StringField()
+
 
 @app.route('/humanGet/', methods=['GET'])
 def getHuman():
@@ -408,27 +360,43 @@ def getHuman():
     else:
         return human
 
-@app.route('/walletGet/', methods=['GET'])
 def getWallet():
     global wallet
     id = session["id"]
-    human = Wallet.objects(humanId=id).first()
+    human = Wallet.objects(humanId=id).all()
     if not human:
-        return jsonify({'error': 'data not found'})
+        wallet = []
+        return wallet
     else:
         wallet = human
-        print(wallet.publicKey)
-        return redirect(url_for("home"))
+        return wallet
 
-@app.route('/myWallets/', methods=['POST', 'GET'])
+@app.route('/myWallets/')
 def myWallets():
-    if request.method == "GET":
-        return render_template("myWallets.html")
-    elif request.method == "POST":
-        threading.Thread(target=Client, args=(request.form["nodePort"],)).start()
-        time.sleep(0.02)
-        state = GetState(request.form["addr"])
-        return render_template("myWallets.html", state=state)
+
+      server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      server.connect(("127.0.0.1", 65518))
+      Speak("NODES", 0, server)
+      time.sleep(0.1)
+      otherNodes = Recieve(server, "NODES")
+      for n in otherNodes:
+          if n == 0:
+              otherNodes.remove(n)
+      print(f"printing other nodes: {otherNodes} ${type(otherNodes[0])}")
+
+      wallets = getWallet()
+      threading.Thread(target=Client, args=(otherNodes[0],)).start()
+      time.sleep(0.02)
+      givenWallets = []
+      for w in wallets:
+          state = GetState(w.privateKeyN)
+          time.sleep(0.1)
+          givenWallets.append(WalletState(w.privateKeyN, state))
+
+      client2.close()
+
+      return render_template("myWallets.html", wallets=givenWallets)
+
 
 
 @app.route('/myTransactions/', methods=['GET','POST'])
@@ -442,13 +410,51 @@ def getTransactions():
     else:
         myTran = human
         print(myTran[0])
-        if request.method == "POST":
-            threading.Thread(target=Client, args=(request.form["nodePort"],)).start()
+        if request.method == "GET":
+
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.connect(("127.0.0.1", 65518))
+            Speak("NODES", 0, server)
+            time.sleep(0.1)
+            otherNodes = Recieve(server, "NODES")
+            for n in otherNodes:
+                if n == 0:
+                    otherNodes.remove(n)
+            print(f"printing other nodes: {otherNodes} ${type(otherNodes[0])}")
+            server.close()
+
+            threading.Thread(target=Client, args=(otherNodes[0],)).start()
             time.sleep(0.02)
             myBlocks = ReturnChain()
-            return render_template("myTransactions.html", transactions=myTran, blocks=myBlocks, status=1)
-        else:
-            return render_template("myTransactions.html", transactions=myTran, status=0)
+
+
+            confiremd = []
+
+            for x in myTran:
+                cou = 0
+                for b in myBlocks:
+                    if x.data in b.data:
+                        confiremd.append(1)
+                        cou = cou + 1
+                if cou == 0:
+                    confiremd.append(0)
+
+            goodTran = []
+            badTran = []
+            index = 0
+            for t in myTran:
+                a = json.loads(t.data)
+                b = JsonToFriendlyTran(a)
+                b.receiver = b.receiver[0]["name"]
+                if confiremd[index] == 1:
+                    goodTran.append(b)
+                else:
+                    badTran.append(b)
+                index = index + 1
+
+
+            return render_template("myTransactions.html", transactions=goodTran, badTransactions=badTran, blocks=myBlocks, status=1)
+
 
 
 @app.route('/human/', methods=['POST'])
@@ -482,8 +488,7 @@ def register():
         return render_template("register.html")
     elif request.method == "POST":
         threading.Thread(target=GenerateAddress, args=(request.form["howMuch"],)).start()
-        return render_template("index.html")
-
+        return redirect(url_for("home"))
 
 
 @app.route("/login/")
@@ -510,19 +515,50 @@ def new():
     if request.method == "GET":
         return render_template("newAddress.html")
     elif request.method == "POST":
-        threading.Thread(target=Client, args=(request.form["nodePort"],)).start()
+
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.connect(("127.0.0.1", 65518))
+        Speak("NODES", 0, server)
+        time.sleep(0.1)
+        otherNodes = Recieve(server, "NODES")
+        for n in otherNodes:
+            if n == 0:
+                otherNodes.remove(n)
+        print(f"printing other nodes: {otherNodes} ${type(otherNodes[0])}")
+        server.close()
+
+        threading.Thread(target=Client, args=(otherNodes[0],)).start()
         threading.Thread(target=GenerateAddress, args=(request.form["howMuch"], session["id"])).start()
-        return render_template("index.html")
+        return redirect(url_for("home"))
 
 @app.route("/transaction/", methods=["POST", "GET"])
 def transaction():
     if request.method == "GET":
-        return render_template("transaction.html")
+        wallets = getWallet()
+        return render_template("transaction.html", wallets=wallets)
     elif request.method == "POST":
-        threading.Thread(target=Client, args=(request.form["nodePort"],)).start()
-        threading.Thread(target=CreateTransaction, args=(request.form["receiver"], request.form["howMuch"], session["id"], )).start()
-        return render_template("index.html")
 
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.connect(("127.0.0.1", 65518))
+        Speak("NODES", 0, server)
+        time.sleep(0.1)
+        otherNodes = Recieve(server, "NODES")
+        for n in otherNodes:
+            if n == 0:
+                otherNodes.remove(n)
+        print(f"printing other nodes: {otherNodes} ${type(otherNodes[0])}")
+        server.close()
+
+        threading.Thread(target=Client, args=(otherNodes[0],)).start()
+        wallets = getWallet()
+        trueWallet = None
+        for w in wallets:
+            if request.form["walletSelect"] == w.privateKeyN:
+                trueWallet = w
+
+        if(trueWallet != None):
+            threading.Thread(target=CreateTransaction, args=(request.form["receiver"], request.form["howMuch"], session["id"], trueWallet, )).start()
+        return redirect(url_for("home"))
 
 
 

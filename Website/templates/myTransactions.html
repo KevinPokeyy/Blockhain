@@ -1,0 +1,14 @@
+{%extends "base.html"%}
+{% block content %}
+
+<h1 class="display-4">Your transactions</h1>
+<hr>
+  {% for x in transactions %}
+            <div class="p-3 mb-2 bg-success text-white">Wallet: {{x.sender}} <br/> Receiver: {{x.receiver}}    <br>AmountSent: {{x.amount}}    </div>
+  {% endfor %}
+
+      {% for b in badTransactions %}
+            <div class="p-3 mb-2 bg-danger text-white">Wallet: {{b.sender}}  <br/>     Receiver: {{b.receiver}}    <br>  AmountSent: {{b.amount}}   </div>
+  {% endfor %}
+
+{% endblock %}

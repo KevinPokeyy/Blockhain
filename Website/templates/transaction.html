@@ -5,10 +5,13 @@
 
 
 <form action="/transaction/" method="post">
-  <div class="mb-3">
-    <label for="nodePort" class="form-label">Node Port</label>
-    <input type="text" class="form-control" id="nodePort" name="nodePort" aria-describedby="nodePortHelp">
-    <div id="nodePortHelp" class="form-text">Enter the port of the node you would like to send this request to.</div>
+    <div class="form-group">
+    <label for="walletSelect">Wallet</label>
+    <select class="form-control" id="walletSelect" name="walletSelect">
+      {% for w in wallets %}
+      <option>{{w.privateKeyN}}</option>
+      {% endfor %}
+    </select>
   </div>
   <div class="mb-3">
     <label for="receiver" class="form-label">Receiver</label>
