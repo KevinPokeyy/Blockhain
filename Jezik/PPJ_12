@@ -1,33 +1,4 @@
-
-
-BNF:
-
-PROGRAM := seperator({) BODY seperator(})
-BODY := variable = OPERATIONS BODY | for RESERVED_FOR BODY | if RESERVED_IF BODY | action ACTION BODY | epsilon
-
-OPERATIONS := OPERATOR operator OPERATIONS | OPERATOR | "string"
-OPERATOR := number | variable
-
-CONDITION := OPERATIONS checker OPERATIONS
-
-
-RESERVED_FOR := FOR_CONDITION seperator({) BODY seperator({)
-FOR_CONDITION := seperator(() CONDITION seperator(() variable = OPERATIONS seperator()) seperator())
-
-RESERVED_IF := seperator(() CONDITION seperator()) seperator({) BODY seperator(})
-
-ACTION := BuyItem seperator(() BUY_ITEM_ARGS seperator()) | SellItem seperator(() SELL_ITEM_ARGS seperator()) |
-            TransferMoney seperator(() TRANSFER_MONEY_ARGS seperator()) | TransferItem seperator(() TRANSFER_ITEM_ARGS seperator())
-
-BUT_ITEM_ARGS := variable seperator(,) OPERATOR seperator(,) variable
-SELL_ITEM_ARGS := variable seperator(,) variable
-TRANSFER_MONEY_ARGS := variable seperator(,) variable seperator(,) OPERATOR
-TRANSFER_ITEM_ARGS := variable seperator(,) variable seperator(,) variable
-
-
-
 Pametne pogodbe:
-
 
 #Pogodba za obravnavo kupovanja izdelkov/stvari iz trgovine v igri. Igralec bo iz seznama izbral stvar, katero želi kupiti
 in iz svoje denarnice plačal s denarjem. Pogodba se izvede samo če ima igralec dovolj denarja v svoji denarnici.
@@ -89,6 +60,23 @@ function  transfer_items(player1, player2, item){
   }
   else{
     player1.items.remove(item)
+    player2.items.add(item)
+    return true
+  }
+
+
+} 
+
+
+#Pogodba, ki nakup izdelka po manjši ceni, če ima igralec srečo. Pogodba se izvede samo če igralec random number generator izbere od 5 število med 1 - 5 izbere 1.
+
+function Gamble(player1, cost, item){
+
+  if(Random(1-5) != 1{
+    return false
+  }
+  else{
+    player1.money = player.money - (0.2 * cost)
     player2.items.add(item)
     return true
   }
