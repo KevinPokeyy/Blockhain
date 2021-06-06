@@ -68,7 +68,7 @@ function  transfer_items(player1, player2, item){
 } 
 
 
-#Pogodba, ki nakup izdelka po manjši ceni, če ima igralec srečo. Pogodba se izvede samo če igralec random number generator izbere od 5 število med 1 - 5 izbere 1.
+#Pogodba, ki nakup izdelka po manjši ceni, če ima igralec srečo. Pogodba se izvede samo če random number generator izbere 1 med prvimi 5 števili.
 
 function Gamble(player1, cost, item){
 
