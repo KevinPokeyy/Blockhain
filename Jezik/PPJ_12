@@ -1,34 +1,32 @@
-ZAGOVOR PROJEKTA: 7.6.2021
 
 
-item shop
-money transactions
-item transactions
-collecting money/items?*
-skill tree?*
+BNF:
 
-BNF
+PROGRAM := seperator({) BODY seperator(})
+BODY := variable = OPERATIONS BODY | for RESERVED_FOR BODY | if RESERVED_IF BODY | action ACTION BODY | epsilon
 
-(Tadej verzija)
-S:P(I)->SP
-P= player /null
-I= item / money /null
-S= shop /null
+OPERATIONS := OPERATOR operator OPERATIONS | OPERATOR | "string"
+OPERATOR := number | variable
 
-(Kevin verzija)
-S ::= POGODBA PLAYERS
-PLAYERS ::= PLAYER PLAYERS | PLAYER
-PLAYER ::= PLAYER.ime ITEMS | PLAYER.ime
-ITEMS ::= ITEM ITEMS | ITEM
-ITEM ::= float | ITEM.name
-POGODBA ::= buy_item | sell_item | transfer_money | transfer_item
+CONDITION := OPERATIONS checker OPERATIONS
 
 
+RESERVED_FOR := FOR_CONDITION seperator({) BODY seperator({)
+FOR_CONDITION := seperator(() CONDITION seperator(() variable = OPERATIONS seperator()) seperator())
 
+RESERVED_IF := seperator(() CONDITION seperator()) seperator({) BODY seperator(})
+
+ACTION := BuyItem seperator(() BUY_ITEM_ARGS seperator()) | SellItem seperator(() SELL_ITEM_ARGS seperator()) |
+            TransferMoney seperator(() TRANSFER_MONEY_ARGS seperator()) | TransferItem seperator(() TRANSFER_ITEM_ARGS seperator())
+
+BUT_ITEM_ARGS := variable seperator(,) OPERATOR seperator(,) variable
+SELL_ITEM_ARGS := variable seperator(,) variable
+TRANSFER_MONEY_ARGS := variable seperator(,) variable seperator(,) OPERATOR
+TRANSFER_ITEM_ARGS := variable seperator(,) variable seperator(,) variable
 
 
 
-Pametne pogodbe
+Pametne pogodbe:
 
 
 #Pogodba za obravnavo kupovanja izdelkov/stvari iz trgovine v igri. Igralec bo iz seznama izbral stvar, katero želi kupiti
@@ -42,6 +40,7 @@ function buy_item(player, money, item){
   else{
     player.money.remove(money)
     player.items.add(item)
+    return true
   }
 
 } 
@@ -51,20 +50,21 @@ function buy_item(player, money, item){
 
 function  sell_item(player, item){
 
-  if(player.items.finditem(item)==true){
-    player.items.remove(item)
-    player.money.add()
+  if(player.items.finditem(item)==false){
+    return false
 
   }
   else{
-    return false
+    player.items.remove(item)
+    player.money.add()
+    return true
   }
 
 
 
 } 
 
-#Pogodba za prenosa denarja med igralci. Pogodba se izvede samo če ima igralec1 dovolj denarja v svoji denarnici.
+#Pogodba za prenosa denarja med igralci. Pogodba se izvede, samo če ima igralec1 dovolj denarja v svoji denarnici.
 
 function  transfer_money(player1, player2, money){
 
@@ -74,6 +74,7 @@ function  transfer_money(player1, player2, money){
   else{
     player1.money.remove()
     player2.money.add()
+    return true
   }
 
 
@@ -89,6 +90,7 @@ function  transfer_items(player1, player2, item){
   else{
     player1.items.remove(item)
     player2.items.add(item)
+    return true
   }
 
 
