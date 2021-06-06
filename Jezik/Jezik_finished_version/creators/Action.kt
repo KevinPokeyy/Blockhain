@@ -22,6 +22,23 @@ class Action(val index:Int) {
 
 
     }
+    fun execute():String{
+        var output:String=""
+        for(i in BuyItems){
+            output+= "\n"+i.execute()
+        }
+        for(i in SellItems){
+            output+="\n"+i.execute()
+        }
+        for(i in TransferMoney){
+            output+="\n"+i.execute()
+        }
+        for(i in TransferItem){
+            output+="\n"+i.execute()
+        }
+        return output
+
+    }
     fun findbuy():BuyItem{
         var current=BuyItems[0].index
         var ind:Int=0
